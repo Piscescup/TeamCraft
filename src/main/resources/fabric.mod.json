@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "teamcraft",
+  "version": "${version}",
+  "name": "TeamCraft",
+  "description": "A Fabric mod that lets players create and join teams. Supports team creation, invites, team chat, and team management.",
+  "authors": [
+    "Pisces Cup"
+  ],
+  "contact": {},
+  "license": "Apache-2.0",
+  "icon": "assets/teamcraft/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "io.github.piscescup.fabricmc.teamcraft.TeamcraftDataGenerator"
+    ],
+    "client": [
+      "io.github.piscescup.fabricmc.teamcraft.client.TeamcraftClient"
+    ],
+    "main": [
+      "io.github.piscescup.fabricmc.teamcraft.Teamcraft"
+    ]
+  },
+  "mixins": [
+    "teamcraft.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
