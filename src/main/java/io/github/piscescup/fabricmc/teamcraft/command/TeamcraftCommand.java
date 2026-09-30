@@ -90,8 +90,7 @@ public final class TeamcraftCommand
                 .executes(s -> {
                     String mode = StringArgumentType.getString(s, "split_mode");
                     SplitMode splitMode = SplitMode.fromName(mode);
-                    configMode(s, splitMode);
-                    return Command.SINGLE_SUCCESS;
+                    return configMode(s, splitMode);
                 })
             )
         )
