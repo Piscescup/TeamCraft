@@ -30,12 +30,7 @@ import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.TeamColor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,10 +80,20 @@ public final class TeamcraftCommand
                 .executes(TeamcraftCommand::configTeamCount))
         )
         .then(Commands.literal("mode")
-            .then(Commands.literal("fixed")
-                .executes(ctx -> configMode(ctx, SplitMode.FIXED)))
-            .then(Commands.literal("random")
-                .executes(ctx -> configMode(ctx, SplitMode.RANDOM)))
+            .then( Commands.argument("split_mode", StringArgumentType.word())
+                .suggests( (cxt, builder) ->{
+                    Arrays.stream(SplitMode.values())
+                        .map(SplitMode::getSerializedName)
+                        .forEach(builder::suggest);
+                    return builder.buildFuture();
+                })
+                .executes(s -> {
+                    String mode = StringArgumentType.getString(s, "split_mode");
+                    SplitMode splitMode = SplitMode.fromName(mode);
+                    configMode(s, splitMode);
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
         )
         .then(Commands.literal("friendlyfire")
             .then(Commands.argument("value", BoolArgumentType.bool())
