@@ -3,6 +3,7 @@ package io.github.piscescup.fabricmc.teamcraft.gui;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigSyncPayload;
 import io.github.piscescup.fabricmc.teamcraft.team.SplitMode;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
@@ -15,10 +16,12 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.scores.TeamColor;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -29,6 +32,7 @@ import java.util.function.Consumer;
 @Environment(EnvType.CLIENT)
 public final class TeamcraftConfigScreen extends Screen {
     private static final Duration TOOLTIP_DELAY = Duration.ofMillis(300);
+    private static final int TOOLTIP_MAX_WIDTH = 220;
     private static final int ROW_HEIGHT = 24;
     private static final int ROW_GAP = 4;
     private static final int HEADER_HEIGHT = 22;
@@ -60,9 +64,12 @@ public final class TeamcraftConfigScreen extends Screen {
     private String teamCountText;
     private SplitMode mode;
     private boolean friendlyFire;
+    private List<String> candidates;
+    private List<String> onlinePlayers;
     private List<TeamColor> configuredColors;
     private TeamColor selectedColor = TeamColor.RED;
-    private String namesText;
+    private List<String> configuredNames;
+    private String pendingName = "";
 
     private TeamInfoData ownTeam;
     private List<TeamInfoData> teams;
@@ -75,12 +82,15 @@ public final class TeamcraftConfigScreen extends Screen {
     public TeamcraftConfigScreen(
         Screen parent,
         TeamcraftConfigData config,
+        List<String> candidates,
+        List<String> onlinePlayers,
         TeamInfoData ownTeam,
         List<TeamInfoData> teams
     ) {
-        super(Component.translatable("teamcraft.gui.title"));
+        super(Component.translatable(TeamcraftTranslations.GUI_TITLE.key()));
         this.parent = parent;
         loadConfig(config);
+        loadCandidates(candidates, onlinePlayers);
         loadTeams(ownTeam, teams);
     }
 
@@ -100,6 +110,7 @@ public final class TeamcraftConfigScreen extends Screen {
             case TEAM_CONFIG -> addTeamConfigPage();
             case OWN_TEAM -> addOwnTeamPage();
             case ALL_TEAMS -> addAllTeamsPage();
+            case HELP -> addHelpPage();
         }
         this.contentHeight = Math.max(0, this.cursorY - ROW_GAP);
         addFooter();
@@ -199,55 +210,73 @@ public final class TeamcraftConfigScreen extends Screen {
         switch (payload.response()) {
             case OPENED -> {
                 loadConfig(payload.config());
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
                 loadTeams(payload.ownTeam(), payload.teams());
-                showOverlay("teamcraft.gui.refreshed", ChatFormatting.GREEN);
+                showOverlay(TeamcraftTranslations.GUI_REFRESHED.key(), ChatFormatting.GREEN);
             }
             case SAVED -> {
                 loadConfig(payload.config());
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
                 loadTeams(payload.ownTeam(), payload.teams());
-                showOverlay("teamcraft.gui.saved", ChatFormatting.GREEN);
+                showOverlay(TeamcraftTranslations.GUI_SAVED.key(), ChatFormatting.GREEN);
             }
             case BUILT -> {
                 loadConfig(payload.config());
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
                 loadTeams(payload.ownTeam(), payload.teams());
                 this.page = Page.ALL_TEAMS;
                 this.scrollOffset = 0;
-                showOverlay("teamcraft.gui.built", ChatFormatting.GREEN);
+                showOverlay(TeamcraftTranslations.GUI_BUILT.key(), ChatFormatting.GREEN);
             }
             case TEAM_SAVED -> {
                 loadTeams(payload.ownTeam(), payload.teams());
-                showOverlay("teamcraft.gui.team_saved", ChatFormatting.GREEN);
+                showOverlay(TeamcraftTranslations.GUI_TEAM_SAVED.key(), ChatFormatting.GREEN);
             }
-            case INVALID -> showOverlay("teamcraft.gui.error.invalid_server", ChatFormatting.RED);
+            case INVALID -> showOverlay(TeamcraftTranslations.GUI_ERROR_INVALID_SERVER.key(), ChatFormatting.RED);
             case PERMISSION_DENIED -> {
-                showOverlay("teamcraft.gui.error.permission", ChatFormatting.RED);
+                showOverlay(TeamcraftTranslations.GUI_ERROR_PERMISSION.key(), ChatFormatting.RED);
                 onClose();
                 return;
             }
             case NO_CANDIDATES -> {
                 loadConfig(payload.config());
-                showOverlay("teamcraft.gui.error.no_candidates", ChatFormatting.RED);
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
+                showOverlay(TeamcraftTranslations.GUI_ERROR_NO_CANDIDATES.key(), ChatFormatting.RED);
             }
             case TEAMS_EXIST -> {
                 loadConfig(payload.config());
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
                 loadTeams(payload.ownTeam(), payload.teams());
-                showOverlay("teamcraft.gui.error.teams_exist", ChatFormatting.RED);
+                showOverlay(TeamcraftTranslations.GUI_ERROR_TEAMS_EXIST.key(), ChatFormatting.RED);
             }
             case TOO_MANY_TEAMS -> {
                 loadConfig(payload.config());
-                showOverlay("teamcraft.gui.error.too_many_teams", ChatFormatting.RED);
+                loadCandidates(payload.candidates(), payload.onlinePlayers());
+                showOverlay(TeamcraftTranslations.GUI_ERROR_TOO_MANY_TEAMS.key(), ChatFormatting.RED);
             }
             case TEAM_NOT_FOUND -> {
                 loadTeams(payload.ownTeam(), payload.teams());
-                showOverlay("teamcraft.gui.error.team_not_found", ChatFormatting.RED);
+                showOverlay(TeamcraftTranslations.GUI_ERROR_TEAM_NOT_FOUND.key(), ChatFormatting.RED);
+            }
+            case TEAM_DISBANDED -> {
+                loadTeams(payload.ownTeam(), payload.teams());
+                this.page = Page.ALL_TEAMS;
+                this.scrollOffset = 0;
+                showOverlay(TeamcraftTranslations.GUI_DETAILS_DISBANDED.key(), ChatFormatting.GREEN);
+            }
+            case ALL_TEAMS_CLEARED -> {
+                loadTeams(payload.ownTeam(), payload.teams());
+                this.page = Page.ALL_TEAMS;
+                this.scrollOffset = 0;
+                showOverlay(TeamcraftTranslations.GUI_ALL_TEAMS_CLEARED.key(), ChatFormatting.GREEN);
             }
         }
         rebuildWidgets();
     }
 
     private void calculateBounds() {
-        int panelWidth = Math.min(640, this.width - 16);
-        int panelHeight = Math.min(380, this.height - 16);
+        int panelWidth = Math.max(1, this.width - 16);
+        int panelHeight = Math.max(1, this.height - 16);
         this.panelLeft = (this.width - panelWidth) / 2;
         this.panelTop = (this.height - panelHeight) / 2;
         this.panelRight = this.panelLeft + panelWidth;
@@ -278,153 +307,240 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private void addTeamConfigPage() {
-        addHeader("teamcraft.gui.category.split");
+        addHeader(TeamcraftTranslations.GUI_CATEGORY_CANDIDATES.key());
+        addTextRow(
+            Component.translatable(
+                TeamcraftTranslations.GUI_CANDIDATES_SUMMARY.key(),
+                this.candidates.size(),
+                this.onlinePlayers.size()
+            ).withStyle(ChatFormatting.GRAY),
+            tooltip(TeamcraftTranslations.GUI_CATEGORY_CANDIDATES.key())
+        );
+
+        Button selectAll = Button.builder(Component.translatable(TeamcraftTranslations.GUI_CANDIDATES_SELECT_ALL.key()), ignored -> {
+            LinkedHashSet<String> selected = new LinkedHashSet<>(this.candidates);
+            for (String playerName : this.onlinePlayers) {
+                if (selected.size() >= TeamcraftConfigData.MAX_CANDIDATES) {
+                    break;
+                }
+                selected.add(playerName);
+            }
+            this.candidates = new ArrayList<>(selected);
+            rebuildWidgets();
+        }).build();
+        Button clear = Button.builder(Component.translatable(TeamcraftTranslations.GUI_CANDIDATES_CLEAR.key()), ignored -> {
+            this.candidates.clear();
+            rebuildWidgets();
+        }).build();
+        addTwoWidgets(selectAll, clear, tooltip(TeamcraftTranslations.GUI_CATEGORY_CANDIDATES.key()));
+
+        LinkedHashSet<String> displayedPlayers = new LinkedHashSet<>(this.candidates);
+        displayedPlayers.addAll(this.onlinePlayers);
+        if (displayedPlayers.isEmpty()) {
+            addTextRow(
+                Component.translatable(TeamcraftTranslations.GUI_CANDIDATES_NONE_ONLINE.key()).withStyle(ChatFormatting.GRAY),
+                tooltip(TeamcraftTranslations.GUI_CATEGORY_CANDIDATES.key())
+            );
+        }
+        for (String playerName : displayedPlayers) {
+            boolean selected = this.candidates.contains(playerName);
+            boolean online = this.onlinePlayers.contains(playerName);
+            Component message = Component.literal(selected ? "☑ " : "☐ ")
+                .append(Component.literal(playerName).withStyle(selected ? ChatFormatting.WHITE : ChatFormatting.GRAY))
+                .append(Component.literal("  •  ").withStyle(ChatFormatting.DARK_GRAY))
+                .append(Component.translatable(
+                    online ? TeamcraftTranslations.GUI_CANDIDATES_ONLINE.key() : TeamcraftTranslations.GUI_CANDIDATES_OFFLINE.key()
+                ).withStyle(online ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY));
+            Button player = Button.builder(message, ignored -> {
+                if (this.candidates.remove(playerName)) {
+                    rebuildWidgets();
+                    return;
+                }
+                if (this.candidates.size() < TeamcraftConfigData.MAX_CANDIDATES) {
+                    this.candidates.add(playerName);
+                    rebuildWidgets();
+                }
+            }).build();
+            addFullWidget(player, tooltip(
+                TeamcraftTranslations.GUI_CANDIDATES_PLAYER_TOOLTIP.key(),
+                TeamcraftTranslations.GUI_CANDIDATES_PLAYER_EXAMPLE.key()
+            ));
+        }
+
+        addHeader(TeamcraftTranslations.GUI_CATEGORY_SPLIT.key());
 
         CycleButton<SplitRule> rule = CycleButton.builder(SplitRule::displayName, currentRule())
             .withValues(SplitRule.values())
-            .create(Component.translatable("teamcraft.gui.option.rule"), (button, value) -> {
+            .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_RULE.key()), (button, value) -> {
                 this.fixedTeamCount = value == SplitRule.TEAM_COUNT;
                 this.scrollOffset = 0;
                 rebuildWidgets();
             });
-        addFullWidget(rule, tooltip("teamcraft.gui.option.rule"));
+        addFullWidget(rule, tooltip(TeamcraftTranslations.GUI_OPTION_RULE.key()));
 
         if (this.fixedTeamCount) {
             EditBox count = numberBox(
-                "teamcraft.gui.option.team_count",
+                TeamcraftTranslations.GUI_OPTION_TEAM_COUNT.key(),
                 this.teamCountText,
                 value -> this.teamCountText = value
             );
-            addLabeledWidget("teamcraft.gui.option.team_count", count, tooltip("teamcraft.gui.option.team_count"));
+            addLabeledWidget(TeamcraftTranslations.GUI_OPTION_TEAM_COUNT.key(), count, tooltip(TeamcraftTranslations.GUI_OPTION_TEAM_COUNT.key()));
         }
         else {
             EditBox size = numberBox(
-                "teamcraft.gui.option.players_per_team",
+                TeamcraftTranslations.GUI_OPTION_PLAYERS_PER_TEAM.key(),
                 this.playersPerTeamText,
                 value -> this.playersPerTeamText = value
             );
             addLabeledWidget(
-                "teamcraft.gui.option.players_per_team",
+                TeamcraftTranslations.GUI_OPTION_PLAYERS_PER_TEAM.key(),
                 size,
-                tooltip("teamcraft.gui.option.players_per_team")
+                tooltip(TeamcraftTranslations.GUI_OPTION_PLAYERS_PER_TEAM.key())
             );
         }
 
         CycleButton<SplitMode> modeButton = CycleButton.builder(SplitMode::displayName, this.mode)
             .withValues(SplitMode.values())
-            .create(Component.translatable("teamcraft.gui.option.mode"), (button, value) -> this.mode = value);
-        addFullWidget(modeButton, tooltip("teamcraft.gui.option.mode"));
+            .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_MODE.key()), (button, value) -> this.mode = value);
+        addFullWidget(modeButton, tooltip(TeamcraftTranslations.GUI_OPTION_MODE.key()));
 
         CycleButton<Boolean> friendlyFireButton = CycleButton.onOffBuilder(this.friendlyFire)
             .create(
-                Component.translatable("teamcraft.gui.option.friendly_fire"),
+                Component.translatable(TeamcraftTranslations.GUI_OPTION_FRIENDLY_FIRE.key()),
                 (button, value) -> this.friendlyFire = value
             );
-        addFullWidget(friendlyFireButton, tooltip("teamcraft.gui.option.friendly_fire"));
+        addFullWidget(friendlyFireButton, tooltip(TeamcraftTranslations.GUI_OPTION_FRIENDLY_FIRE.key()));
 
-        addHeader("teamcraft.gui.category.appearance");
-        EditBox names = textBox(
-            "teamcraft.gui.option.names",
-            "teamcraft.gui.placeholder.names",
-            this.namesText,
-            TeamcraftConfigData.MAX_LIST_SIZE * (TeamcraftConfigData.MAX_NAME_LENGTH + 2),
-            value -> this.namesText = value
+        addHeader(TeamcraftTranslations.GUI_CATEGORY_APPEARANCE.key());
+        addHeader(TeamcraftTranslations.GUI_OPTION_NAMES.key());
+        if (this.configuredNames.isEmpty()) {
+            addTextRow(
+                Component.translatable(TeamcraftTranslations.GUI_NAMES_DEFAULT.key()).withStyle(ChatFormatting.GRAY),
+                tooltip(TeamcraftTranslations.GUI_OPTION_NAMES.key())
+            );
+        }
+        for (int i = 0; i < this.configuredNames.size(); i++) {
+            int index = i;
+            Button name = Button.builder(Component.translatable(
+                TeamcraftTranslations.GUI_NAMES_SLOT.key(), i + 1, this.configuredNames.get(i)
+            ), ignored -> { }).build();
+            Button remove = Button.builder(Component.translatable(TeamcraftTranslations.GUI_NAMES_REMOVE.key()), ignored -> {
+                this.configuredNames.remove(index);
+                rebuildWidgets();
+            }).build();
+            addTwoWidgets(name, remove, tooltip(TeamcraftTranslations.GUI_OPTION_NAMES.key()));
+        }
+
+        EditBox nameInput = textBox(
+            TeamcraftTranslations.GUI_OPTION_NAMES.key(),
+            TeamcraftTranslations.GUI_PLACEHOLDER_NAMES.key(),
+            this.pendingName,
+            TeamcraftConfigData.MAX_NAME_LENGTH,
+            value -> this.pendingName = value
         );
-        addLabeledWidget("teamcraft.gui.option.names", names, tooltip("teamcraft.gui.option.names"));
+        Button addName = Button.builder(Component.translatable(TeamcraftTranslations.GUI_NAMES_ADD.key()), ignored -> {
+            String value = this.pendingName.trim();
+            if (!value.isEmpty() && this.configuredNames.size() < TeamcraftConfigData.MAX_LIST_SIZE) {
+                this.configuredNames.add(value);
+                this.pendingName = "";
+                rebuildWidgets();
+            }
+        }).build();
+        addTwoWidgets(nameInput, addName, tooltip(TeamcraftTranslations.GUI_OPTION_NAMES.key()));
 
-        addHeader("teamcraft.gui.option.colors");
+        addHeader(TeamcraftTranslations.GUI_OPTION_COLORS.key());
         if (this.configuredColors.isEmpty()) {
             addTextRow(
-                Component.translatable("teamcraft.gui.colors.default_palette").withStyle(ChatFormatting.GRAY),
-                tooltip("teamcraft.gui.option.colors")
+                Component.translatable(TeamcraftTranslations.GUI_COLORS_DEFAULT_PALETTE.key()).withStyle(ChatFormatting.GRAY),
+                tooltip(TeamcraftTranslations.GUI_OPTION_COLORS.key())
             );
         }
         for (int i = 0; i < this.configuredColors.size(); i++) {
             int index = i;
             Button color = colorDropdownButton(
-                Component.translatable("teamcraft.gui.colors.slot", i + 1),
+                Component.translatable(TeamcraftTranslations.GUI_COLORS_SLOT.key(), i + 1),
                 this.configuredColors.get(i),
                 value -> this.configuredColors.set(index, value)
             );
-            Button remove = Button.builder(Component.translatable("teamcraft.gui.colors.remove"), ignored -> {
+            Button remove = Button.builder(Component.translatable(TeamcraftTranslations.GUI_COLORS_REMOVE.key()), ignored -> {
                 this.configuredColors.remove(index);
                 rebuildWidgets();
             }).build();
-            addTwoWidgets(color, remove, tooltip("teamcraft.gui.option.colors"));
+            addTwoWidgets(color, remove, tooltip(TeamcraftTranslations.GUI_OPTION_COLORS.key()));
         }
 
         Button picker = colorDropdownButton(
-            Component.translatable("teamcraft.gui.colors.picker"),
+            Component.translatable(TeamcraftTranslations.GUI_COLORS_PICKER.key()),
             this.selectedColor,
             value -> this.selectedColor = value
         );
-        Button addColor = Button.builder(Component.translatable("teamcraft.gui.colors.add"), ignored -> {
+        Button addColor = Button.builder(Component.translatable(TeamcraftTranslations.GUI_COLORS_ADD.key()), ignored -> {
             if (this.configuredColors.size() < TeamcraftConfigData.MAX_LIST_SIZE) {
                 this.configuredColors.add(this.selectedColor);
                 rebuildWidgets();
             }
         }).build();
-        addTwoWidgets(picker, addColor, tooltip("teamcraft.gui.option.colors"));
+        addTwoWidgets(picker, addColor, tooltip(TeamcraftTranslations.GUI_OPTION_COLORS.key()));
 
         if (!this.configuredColors.isEmpty()) {
-            Button useDefaults = Button.builder(Component.translatable("teamcraft.gui.colors.use_defaults"), ignored -> {
+            Button useDefaults = Button.builder(Component.translatable(TeamcraftTranslations.GUI_COLORS_USE_DEFAULTS.key()), ignored -> {
                 this.configuredColors.clear();
                 rebuildWidgets();
             }).build();
-            addFullWidget(useDefaults, tooltip("teamcraft.gui.option.colors"));
+            addFullWidget(useDefaults, tooltip(TeamcraftTranslations.GUI_OPTION_COLORS.key()));
         }
 
         addTextRow(
-            Component.translatable("teamcraft.gui.session_note").withStyle(ChatFormatting.DARK_GRAY),
-            Component.translatable("teamcraft.gui.session_note")
+            Component.translatable(TeamcraftTranslations.GUI_SESSION_NOTE.key()).withStyle(ChatFormatting.DARK_GRAY),
+            Component.translatable(TeamcraftTranslations.GUI_SESSION_NOTE.key())
         );
     }
 
     private void addOwnTeamPage() {
-        addHeader("teamcraft.gui.category.own_team");
+        addHeader(TeamcraftTranslations.GUI_CATEGORY_OWN_TEAM.key());
         if (this.ownTeam == null) {
             addTextRow(
-                Component.translatable("teamcraft.gui.own_team.none").withStyle(ChatFormatting.GRAY),
-                Component.translatable("teamcraft.gui.own_team.none.tooltip")
+                Component.translatable(TeamcraftTranslations.GUI_OWN_TEAM_NONE.key()).withStyle(ChatFormatting.GRAY),
+                Component.translatable(TeamcraftTranslations.GUI_OWN_TEAM_NONE_TOOLTIP.key())
             );
             return;
         }
 
-        addValueRow("teamcraft.gui.own_team.id", Component.literal(this.ownTeam.id()).withStyle(ChatFormatting.GRAY));
+        addValueRow(TeamcraftTranslations.GUI_OWN_TEAM_ID.key(), Component.literal(this.ownTeam.id()).withStyle(ChatFormatting.GRAY));
 
         EditBox name = textBox(
-            "teamcraft.gui.own_team.name",
-            "teamcraft.gui.placeholder.team_name",
+            TeamcraftTranslations.GUI_OWN_TEAM_NAME.key(),
+            TeamcraftTranslations.GUI_PLACEHOLDER_TEAM_NAME.key(),
             this.ownTeamName,
             TeamInfoData.MAX_DISPLAY_NAME_LENGTH,
             value -> this.ownTeamName = value
         );
-        addLabeledWidget("teamcraft.gui.own_team.name", name, tooltip("teamcraft.gui.own_team.name"));
+        addLabeledWidget(TeamcraftTranslations.GUI_OWN_TEAM_NAME.key(), name, tooltip(TeamcraftTranslations.GUI_OWN_TEAM_NAME.key()));
 
         Button color = colorDropdownButton(
-            Component.translatable("teamcraft.gui.own_team.color"),
+            Component.translatable(TeamcraftTranslations.GUI_OWN_TEAM_COLOR.key()),
             this.ownTeamColor,
             value -> this.ownTeamColor = value
         );
-        addFullWidget(color, tooltip("teamcraft.gui.own_team.color"));
+        addFullWidget(color, tooltip(TeamcraftTranslations.GUI_OWN_TEAM_COLOR.key()));
 
         CycleButton<Boolean> friendly = CycleButton.onOffBuilder(this.ownTeamFriendlyFire)
-            .create(Component.translatable("teamcraft.gui.own_team.friendly_fire"),
+            .create(Component.translatable(TeamcraftTranslations.GUI_OWN_TEAM_FRIENDLY_FIRE.key()),
                 (button, value) -> this.ownTeamFriendlyFire = value);
-        addFullWidget(friendly, tooltip("teamcraft.gui.own_team.friendly_fire"));
+        addFullWidget(friendly, tooltip(TeamcraftTranslations.GUI_OWN_TEAM_FRIENDLY_FIRE.key()));
 
         addValueRow(
-            "teamcraft.gui.own_team.members",
+            TeamcraftTranslations.GUI_OWN_TEAM_MEMBERS.key(),
             Component.literal(String.join(", ", this.ownTeam.members())).withStyle(ChatFormatting.WHITE)
         );
     }
 
     private void addAllTeamsPage() {
-        addHeader("teamcraft.gui.category.all_teams");
+        addHeader(TeamcraftTranslations.GUI_CATEGORY_ALL_TEAMS.key());
         if (this.teams.isEmpty()) {
             addTextRow(
-                Component.translatable("teamcraft.gui.all_teams.none").withStyle(ChatFormatting.GRAY),
-                Component.translatable("teamcraft.gui.all_teams.none")
+                Component.translatable(TeamcraftTranslations.GUI_ALL_TEAMS_NONE.key()).withStyle(ChatFormatting.GRAY),
+                Component.translatable(TeamcraftTranslations.GUI_ALL_TEAMS_NONE.key())
             );
             return;
         }
@@ -435,33 +551,165 @@ public final class TeamcraftConfigScreen extends Screen {
                 .append(Component.literal("  •  " + team.members().size())
                     .withStyle(ChatFormatting.GRAY));
             Component details = Component.translatable(
-                "teamcraft.gui.all_teams.tooltip",
+                TeamcraftTranslations.GUI_ALL_TEAMS_TOOLTIP.key(),
                 team.id(),
                 Msg.colorName(team.color()),
-                Component.translatable(team.friendlyFire() ? "teamcraft.common.on" : "teamcraft.common.off"),
+                Component.translatable(team.friendlyFire() ? TeamcraftTranslations.COMMON_ON.key() : TeamcraftTranslations.COMMON_OFF.key()),
                 String.join(", ", team.members())
             );
-            Button teamRow = Button.builder(label, ignored -> { }).build();
+            Button teamRow = Button.builder(label, ignored ->
+                this.minecraft.gui.setScreen(new TeamDetailsScreen(this, team))
+            ).build();
             addFullWidget(teamRow, details);
         }
+    }
+
+    private void addHelpPage() {
+        addHeader(TeamcraftTranslations.GUI_HELP_QUICK_START.key());
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_CANDIDATES.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_CANDIDATES.key())
+        );
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_SPLIT.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_SPLIT.key())
+        );
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_APPEARANCE.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_APPEARANCE.key())
+        );
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_BUILD.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_BUILD.key())
+        );
+
+        addHeader(TeamcraftTranslations.GUI_HELP_MANAGEMENT_TITLE.key());
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_MANAGE_TEAMS.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_MANAGE_TEAMS.key())
+        );
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_REMOVE_TEAMS.key()),
+            Component.translatable(TeamcraftTranslations.GUI_HELP_REMOVE_TEAMS.key())
+        );
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_TITLE.key());
+        addTextRow(
+            Component.translatable(TeamcraftTranslations.GUI_HELP_COMMAND_INTRO.key()),
+            null
+        );
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_GENERAL_TITLE.key());
+        addCommandHelp(
+            "/teamcraft  |  /teamcraft help",
+            TeamcraftTranslations.GUI_HELP_CMD_HELP
+        );
+        addCommandHelp("/teamcraft status", TeamcraftTranslations.GUI_HELP_CMD_STATUS);
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_CANDIDATES_TITLE.key());
+        addCommandHelp("/teamcraft init <players...>", TeamcraftTranslations.GUI_HELP_CMD_INIT);
+        addCommandHelp("/teamcraft init add <players...>", TeamcraftTranslations.GUI_HELP_CMD_INIT_ADD);
+        addCommandHelp("/teamcraft init remove <players...>", TeamcraftTranslations.GUI_HELP_CMD_INIT_REMOVE);
+        addCommandHelp("/teamcraft init list", TeamcraftTranslations.GUI_HELP_CMD_INIT_LIST);
+        addCommandHelp("/teamcraft init clear", TeamcraftTranslations.GUI_HELP_CMD_INIT_CLEAR);
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_CONFIG_TITLE.key());
+        addCommandHelp(
+            "/teamcraft config players-per-team <players>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_PLAYERS_PER_TEAM
+        );
+        addCommandHelp(
+            "/teamcraft config team-count <teams>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_TEAM_COUNT
+        );
+        addCommandHelp(
+            "/teamcraft config mode <fixed|random>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_MODE
+        );
+        addCommandHelp(
+            "/teamcraft config friendlyfire <true|false>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_FRIENDLY_FIRE
+        );
+        addCommandHelp(
+            "/teamcraft config colors <colors...>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_COLORS
+        );
+        addCommandHelp(
+            "/teamcraft config colors reset",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_COLORS_RESET
+        );
+        addCommandHelp(
+            "/teamcraft config names <names...>",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_NAMES
+        );
+        addCommandHelp(
+            "/teamcraft config names reset",
+            TeamcraftTranslations.GUI_HELP_CMD_CONFIG_NAMES_RESET
+        );
+        addCommandHelp("/teamcraft config reset", TeamcraftTranslations.GUI_HELP_CMD_CONFIG_RESET);
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_BUILD_TITLE.key());
+        addCommandHelp("/teamcraft build-teams", TeamcraftTranslations.GUI_HELP_CMD_BUILD);
+        addCommandHelp(
+            "/teamcraft build-teams colors <colors...>",
+            TeamcraftTranslations.GUI_HELP_CMD_BUILD_COLORS
+        );
+        addCommandHelp(
+            "/teamcraft build-teams names <names...>",
+            TeamcraftTranslations.GUI_HELP_CMD_BUILD_NAMES
+        );
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_TEAM_TITLE.key());
+        addCommandHelp(
+            "/teamcraft team-manage <team> color <color>",
+            TeamcraftTranslations.GUI_HELP_CMD_TEAM_COLOR
+        );
+        addCommandHelp(
+            "/teamcraft team-manage <team> name <name>",
+            TeamcraftTranslations.GUI_HELP_CMD_TEAM_NAME
+        );
+        addCommandHelp(
+            "/teamcraft team-manage <team> friendlyfire <true|false>",
+            TeamcraftTranslations.GUI_HELP_CMD_TEAM_FRIENDLY_FIRE
+        );
+        addCommandHelp(
+            "/teamcraft team-manage <team> info",
+            TeamcraftTranslations.GUI_HELP_CMD_TEAM_INFO
+        );
+
+        addHeader(TeamcraftTranslations.GUI_HELP_COMMAND_CLEANUP_TITLE.key());
+        addCommandHelp("/teamcraft clear", TeamcraftTranslations.GUI_HELP_CMD_CLEAR);
+        addCommandHelp("/teamcraft reset", TeamcraftTranslations.GUI_HELP_CMD_RESET);
+    }
+
+    private void addCommandHelp(String command, TeamcraftTranslations details) {
+        Component text = Component.literal(command)
+            .withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD)
+            .append("\n")
+            .append(Component.translatable(details.key()).withStyle(ChatFormatting.GRAY));
+        addTextRow(text, null);
     }
 
     private void addFooter() {
         List<FooterAction> actions = switch (this.page) {
             case TEAM_CONFIG -> List.of(
-                new FooterAction("teamcraft.gui.defaults", this::restoreDefaults, true),
-                new FooterAction("teamcraft.gui.close", this::onClose, false),
-                new FooterAction("teamcraft.gui.apply", () -> submitConfig(false), true),
-                new FooterAction("teamcraft.gui.split", () -> submitConfig(true), true)
+                new FooterAction(TeamcraftTranslations.GUI_DEFAULTS.key(), this::restoreDefaults, true),
+                new FooterAction(TeamcraftTranslations.GUI_CLOSE.key(), this::onClose, false),
+                new FooterAction(TeamcraftTranslations.GUI_APPLY.key(), () -> submitConfig(false), true),
+                new FooterAction(TeamcraftTranslations.GUI_SPLIT.key(), () -> submitConfig(true), true)
             );
             case OWN_TEAM -> List.of(
-                new FooterAction("teamcraft.gui.close", this::onClose, false),
-                new FooterAction("teamcraft.gui.refresh", this::refresh, true),
-                new FooterAction("teamcraft.gui.save_team", this::submitOwnTeam, true)
+                new FooterAction(TeamcraftTranslations.GUI_CLOSE.key(), this::onClose, false),
+                new FooterAction(TeamcraftTranslations.GUI_REFRESH.key(), this::refresh, true),
+                new FooterAction(TeamcraftTranslations.GUI_SAVE_TEAM.key(), this::submitOwnTeam, true)
             );
             case ALL_TEAMS -> List.of(
-                new FooterAction("teamcraft.gui.close", this::onClose, false),
-                new FooterAction("teamcraft.gui.refresh", this::refresh, true)
+                new FooterAction(TeamcraftTranslations.GUI_CLOSE.key(), this::onClose, false),
+                new FooterAction(TeamcraftTranslations.GUI_REFRESH.key(), this::refresh, true),
+                new FooterAction(TeamcraftTranslations.GUI_ALL_TEAMS_CLEAR.key(), this::clearAllTeams, true)
+            );
+            case HELP -> List.of(
+                new FooterAction(TeamcraftTranslations.GUI_CLOSE.key(), this::onClose, false)
             );
         };
 
@@ -490,7 +738,7 @@ public final class TeamcraftConfigScreen extends Screen {
         }
         this.waitingForServer = true;
         updateEnabledState();
-        if (!TeamcraftConfigClient.save(draft.config, buildTeams)) {
+        if (!TeamcraftConfigClient.save(draft.config, this.candidates, buildTeams)) {
             this.waitingForServer = false;
             updateEnabledState();
         }
@@ -498,12 +746,12 @@ public final class TeamcraftConfigScreen extends Screen {
 
     private void submitOwnTeam() {
         if (this.ownTeam == null) {
-            showOverlay("teamcraft.gui.error.team_not_found", ChatFormatting.RED);
+            showOverlay(TeamcraftTranslations.GUI_ERROR_TEAM_NOT_FOUND.key(), ChatFormatting.RED);
             return;
         }
         String name = this.ownTeamName.trim();
         if (name.isEmpty()) {
-            showOverlay("teamcraft.gui.error.empty_team_name", ChatFormatting.RED);
+            showOverlay(TeamcraftTranslations.GUI_ERROR_EMPTY_TEAM_NAME.key(), ChatFormatting.RED);
             return;
         }
         this.waitingForServer = true;
@@ -528,6 +776,15 @@ public final class TeamcraftConfigScreen extends Screen {
         }
     }
 
+    private void clearAllTeams() {
+        this.waitingForServer = true;
+        updateEnabledState();
+        if (!TeamcraftConfigClient.clearAllTeams()) {
+            this.waitingForServer = false;
+            updateEnabledState();
+        }
+    }
+
     private DraftResult createConfigDraft() {
         TeamcraftConfigData defaults = TeamcraftConfigData.defaults();
         Integer playersPerTeam = parseBoundedInteger(
@@ -545,14 +802,14 @@ public final class TeamcraftConfigScreen extends Screen {
         // A stale invalid value from the hidden rule must not block saving.
         if (!this.fixedTeamCount && playersPerTeam == null) {
             return DraftResult.error(Component.translatable(
-                "teamcraft.gui.error.players_per_team",
+                TeamcraftTranslations.GUI_ERROR_PLAYERS_PER_TEAM.key(),
                 TeamcraftConfigData.MIN_PLAYERS_PER_TEAM,
                 TeamcraftConfigData.MAX_PLAYERS_PER_TEAM
             ));
         }
         if (this.fixedTeamCount && teamCount == null) {
             return DraftResult.error(Component.translatable(
-                "teamcraft.gui.error.team_count",
+                TeamcraftTranslations.GUI_ERROR_TEAM_COUNT.key(),
                 TeamcraftConfigData.MIN_TEAM_COUNT,
                 TeamcraftConfigData.MAX_TEAM_COUNT
             ));
@@ -564,24 +821,9 @@ public final class TeamcraftConfigScreen extends Screen {
             teamCount = defaults.teamCount();
         }
 
-        List<String> names = new ArrayList<>();
-        if (!this.namesText.isBlank()) {
-            for (String value : this.namesText.split("[|,，;；]")) {
-                String name = value.trim();
-                if (!name.isEmpty()) {
-                    if (name.length() > TeamcraftConfigData.MAX_NAME_LENGTH) {
-                        return DraftResult.error(Component.translatable(
-                            "teamcraft.gui.error.name_too_long",
-                            TeamcraftConfigData.MAX_NAME_LENGTH
-                        ));
-                    }
-                    names.add(name);
-                }
-            }
-        }
-        if (names.size() > TeamcraftConfigData.MAX_LIST_SIZE) {
+        if (this.configuredNames.size() > TeamcraftConfigData.MAX_LIST_SIZE) {
             return DraftResult.error(Component.translatable(
-                "teamcraft.gui.error.too_many_values",
+                TeamcraftTranslations.GUI_ERROR_TOO_MANY_VALUES.key(),
                 TeamcraftConfigData.MAX_LIST_SIZE
             ));
         }
@@ -593,7 +835,7 @@ public final class TeamcraftConfigScreen extends Screen {
             this.mode,
             this.friendlyFire,
             this.configuredColors,
-            names
+            this.configuredNames
         ), null);
     }
 
@@ -601,7 +843,7 @@ public final class TeamcraftConfigScreen extends Screen {
         loadConfig(TeamcraftConfigData.defaults());
         this.scrollOffset = 0;
         rebuildWidgets();
-        showOverlay("teamcraft.gui.defaults_ready", ChatFormatting.YELLOW);
+        showOverlay(TeamcraftTranslations.GUI_DEFAULTS_READY.key(), ChatFormatting.YELLOW);
     }
 
     private void switchPage(Page target) {
@@ -620,7 +862,13 @@ public final class TeamcraftConfigScreen extends Screen {
         this.mode = config.mode();
         this.friendlyFire = config.friendlyFire();
         this.configuredColors = new ArrayList<>(config.colors());
-        this.namesText = String.join(", ", config.names());
+        this.configuredNames = new ArrayList<>(config.names());
+        this.pendingName = "";
+    }
+
+    private void loadCandidates(List<String> candidates, List<String> onlinePlayers) {
+        this.candidates = new ArrayList<>(candidates);
+        this.onlinePlayers = List.copyOf(onlinePlayers);
     }
 
     private void loadTeams(TeamInfoData ownTeam, List<TeamInfoData> teams) {
@@ -644,8 +892,10 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private void addTextRow(Component text, Component tooltip) {
-        this.contentRows.add(new ContentRow(this.cursorY, ROW_HEIGHT, text, tooltip));
-        this.cursorY += ROW_HEIGHT + ROW_GAP;
+        List<FormattedCharSequence> lines = this.font.split(text, Math.max(40, contentWidth() - 16));
+        int height = Math.max(ROW_HEIGHT, lines.size() * (this.font.lineHeight + 1) + 10);
+        this.contentRows.add(new ContentRow(this.cursorY, height, lines, tooltip));
+        this.cursorY += height + ROW_GAP;
     }
 
     private void addValueRow(String labelKey, Component value) {
@@ -659,7 +909,7 @@ public final class TeamcraftConfigScreen extends Screen {
         configureTooltip(widget, tooltip);
         int width = contentWidth() - 8;
         addContentWidget(widget, 4, this.cursorY + 2, width, WIDGET_HEIGHT, true);
-        this.contentRows.add(new ContentRow(this.cursorY, ROW_HEIGHT, null, tooltip));
+        this.contentRows.add(new ContentRow(this.cursorY, ROW_HEIGHT, List.of(), tooltip));
         this.cursorY += ROW_HEIGHT + ROW_GAP;
     }
 
@@ -670,7 +920,7 @@ public final class TeamcraftConfigScreen extends Screen {
         int width = (contentWidth() - 8 - gap) / 2;
         addContentWidget(left, 4, this.cursorY + 2, width, WIDGET_HEIGHT, true);
         addContentWidget(right, 4 + width + gap, this.cursorY + 2, width, WIDGET_HEIGHT, true);
-        this.contentRows.add(new ContentRow(this.cursorY, ROW_HEIGHT, null, tooltip));
+        this.contentRows.add(new ContentRow(this.cursorY, ROW_HEIGHT, List.of(), tooltip));
         this.cursorY += ROW_HEIGHT + ROW_GAP;
     }
 
@@ -683,7 +933,7 @@ public final class TeamcraftConfigScreen extends Screen {
         this.contentRows.add(new ContentRow(
             this.cursorY,
             ROW_HEIGHT,
-            Component.translatable(labelKey),
+            List.of(Component.translatable(labelKey).getVisualOrderText()),
             tooltip
         ));
         this.cursorY += ROW_HEIGHT + ROW_GAP;
@@ -704,7 +954,7 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private EditBox numberBox(String key, String value, java.util.function.Consumer<String> responder) {
-        return textBox(key, "teamcraft.gui.placeholder.number", value, 4, responder);
+        return textBox(key, TeamcraftTranslations.GUI_PLACEHOLDER_NUMBER.key(), value, 4, responder);
     }
 
     private Button colorDropdownButton(Component label, TeamColor value, Consumer<TeamColor> onChanged) {
@@ -803,11 +1053,21 @@ public final class TeamcraftConfigScreen extends Screen {
                 y + row.height,
                 hovered ? 0xB02A323B : 0x8020272E
             );
-            if (row.text != null) {
-                graphics.text(this.font, row.text, this.contentLeft + 8, y + 8, 0xFFE6E6E6);
+            if (!row.textLines.isEmpty()) {
+                int textY = y + (row.textLines.size() == 1 ? 8 : 5);
+                for (FormattedCharSequence line : row.textLines) {
+                    graphics.text(this.font, line, this.contentLeft + 8, textY, 0xFFE6E6E6);
+                    textY += this.font.lineHeight + 1;
+                }
             }
             if (hovered && row.tooltip != null) {
-                graphics.setTooltipForNextFrame(row.tooltip, mouseX, mouseY);
+                int tooltipWidth = Math.max(120, Math.min(TOOLTIP_MAX_WIDTH, this.width - 32));
+                graphics.setTooltipForNextFrame(
+                    this.font,
+                    this.font.split(row.tooltip, tooltipWidth),
+                    mouseX,
+                    mouseY
+                );
             }
         }
 
@@ -909,15 +1169,22 @@ public final class TeamcraftConfigScreen extends Screen {
             .append(Component.translatable(key + ".example").withStyle(ChatFormatting.GRAY));
     }
 
+    private static Component tooltip(String tooltipKey, String exampleKey) {
+        return Component.translatable(tooltipKey)
+            .append("\n")
+            .append(Component.translatable(exampleKey).withStyle(ChatFormatting.GRAY));
+    }
+
     private static void configureTooltip(AbstractWidget widget, Component tooltip) {
         widget.setTooltip(Tooltip.create(tooltip));
         widget.setTooltipDelay(TOOLTIP_DELAY);
     }
 
     private enum Page {
-        TEAM_CONFIG("teamcraft.gui.nav.team_config", "teamcraft.gui.nav.team_config.tooltip"),
-        OWN_TEAM("teamcraft.gui.nav.own_team", "teamcraft.gui.nav.own_team.tooltip"),
-        ALL_TEAMS("teamcraft.gui.nav.all_teams", "teamcraft.gui.nav.all_teams.tooltip");
+        TEAM_CONFIG(TeamcraftTranslations.GUI_NAV_TEAM_CONFIG.key(), TeamcraftTranslations.GUI_NAV_TEAM_CONFIG_TOOLTIP.key()),
+        OWN_TEAM(TeamcraftTranslations.GUI_NAV_OWN_TEAM.key(), TeamcraftTranslations.GUI_NAV_OWN_TEAM_TOOLTIP.key()),
+        ALL_TEAMS(TeamcraftTranslations.GUI_NAV_ALL_TEAMS.key(), TeamcraftTranslations.GUI_NAV_ALL_TEAMS_TOOLTIP.key()),
+        HELP(TeamcraftTranslations.GUI_NAV_HELP.key(), TeamcraftTranslations.GUI_NAV_HELP_TOOLTIP.key());
 
         private final String labelKey;
         private final String tooltipKey;
@@ -933,8 +1200,8 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private enum SplitRule {
-        PLAYERS_PER_TEAM("teamcraft.gui.rule.players_per_team"),
-        TEAM_COUNT("teamcraft.gui.rule.team_count");
+        PLAYERS_PER_TEAM(TeamcraftTranslations.GUI_RULE_PLAYERS_PER_TEAM.key()),
+        TEAM_COUNT(TeamcraftTranslations.GUI_RULE_TEAM_COUNT.key());
 
         private final String translationKey;
 
@@ -950,7 +1217,7 @@ public final class TeamcraftConfigScreen extends Screen {
     private record PositionedWidget(AbstractWidget widget, int xOffset, int baseY, boolean enabled) {
     }
 
-    private record ContentRow(int baseY, int height, Component text, Component tooltip) {
+    private record ContentRow(int baseY, int height, List<FormattedCharSequence> textLines, Component tooltip) {
     }
 
     private record ContentHeader(int baseY, Component text) {

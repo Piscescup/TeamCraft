@@ -1,5 +1,6 @@
 package io.github.piscescup.fabricmc.teamcraft.datagen;
 
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.core.HolderLookup;
@@ -10,9 +11,10 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Generates the {@code zh_cn} language file.
  */
-public final class SimplifiedChineseLanguageProvider extends FabricLanguageProvider
+public final class ZHCNLanguageProvider
+    extends FabricLanguageProvider
 {
-    public SimplifiedChineseLanguageProvider(
+    public ZHCNLanguageProvider(
         FabricPackOutput output,
         CompletableFuture<HolderLookup.Provider> registries
     ) {
@@ -21,6 +23,8 @@ public final class SimplifiedChineseLanguageProvider extends FabricLanguageProvi
 
     @Override
     public void generateTranslations(HolderLookup.@NonNull Provider registries, @NonNull TranslationBuilder builder) {
-        TeamcraftTranslations.addSimplifiedChinese(builder);
+        for (TeamcraftTranslations translation : TeamcraftTranslations.values()) {
+            builder.add(translation.key(), translation.zhCnTranslation());
+        }
     }
 }

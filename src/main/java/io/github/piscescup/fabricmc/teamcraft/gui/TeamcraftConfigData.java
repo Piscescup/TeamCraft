@@ -30,6 +30,7 @@ public record TeamcraftConfigData(
     public static final int MIN_TEAM_COUNT = 1;
     public static final int MAX_TEAM_COUNT = 100;
     public static final int MAX_LIST_SIZE = 100;
+    public static final int MAX_CANDIDATES = 1000;
     public static final int MAX_NAME_LENGTH = 64;
 
     private static final int DEFAULT_TEAM_COUNT = 2;

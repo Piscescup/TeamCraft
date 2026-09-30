@@ -1,7 +1,6 @@
 package io.github.piscescup.fabricmc.teamcraft;
 
-import io.github.piscescup.fabricmc.teamcraft.datagen.EnglishLanguageProvider;
-import io.github.piscescup.fabricmc.teamcraft.datagen.SimplifiedChineseLanguageProvider;
+import io.github.piscescup.fabricmc.teamcraft.datagen.*;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
 
@@ -16,7 +15,10 @@ public class TeamcraftDataGenerator
     @Override
     public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
-        pack.addProvider(EnglishLanguageProvider::new);
-        pack.addProvider(SimplifiedChineseLanguageProvider::new);
+        pack.addProvider(ENUSLanguageProvider::new);
+        pack.addProvider(ZHCNLanguageProvider::new);
+        pack.addProvider(ZHHKLanguageProvider::new);
+        pack.addProvider(ZHTWLanguageProvider::new);
+        pack.addProvider(ENGBLanguageProvider::new);
     }
 }

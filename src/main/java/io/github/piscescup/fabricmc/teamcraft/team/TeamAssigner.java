@@ -1,6 +1,7 @@
 package io.github.piscescup.fabricmc.teamcraft.team;
 
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.world.scores.PlayerTeam;
@@ -132,6 +133,23 @@ public final class TeamAssigner
     }
 
     /**
+     * Removes one TeamCraft-managed scoreboard team and releases its members.
+     *
+     * @return whether the requested managed team existed and was removed
+     */
+    public static boolean disband(ServerScoreboard board, String teamId) {
+        PlayerTeam team = board.getPlayerTeam(teamId);
+        if (team == null || !team.getName().startsWith(TEAM_ID_PREFIX)) {
+            return false;
+        }
+        for (String member : List.copyOf(team.getPlayers())) {
+            board.removePlayerFromTeam(member, team);
+        }
+        board.removePlayerTeam(team);
+        return true;
+    }
+
+    /**
      * @param board the server scoreboard
      * @return whether any team created by this mod still exists
      */
@@ -153,6 +171,6 @@ public final class TeamAssigner
         if (index < names.size()) {
             return Component.literal(names.get(index));
         }
-        return Msg.tr("team.auto_name", Msg.colorName(color));
+        return Msg.tr(TeamcraftTranslations.TEAM_AUTO_NAME.key(), Msg.colorName(color));
     }
 }

@@ -5,7 +5,9 @@ import io.github.piscescup.fabricmc.teamcraft.References;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigRequestPayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigSyncPayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigUpdatePayload;
+import io.github.piscescup.fabricmc.teamcraft.gui.network.TeamDeletePayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.TeamUpdatePayload;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -15,6 +17,8 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+
+import java.util.List;
 
 /** Client-only entry points for opening and saving the configuration screen. */
 @Environment(EnvType.CLIENT)
@@ -29,9 +33,9 @@ public final class TeamcraftConfigClient {
 
     public static void register() {
         KeyMapping openConfig = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-            "key.teamcraft.open_config",
+            TeamcraftTranslations.KEY_TEAMCRAFT_OPEN_CONFIG.key(),
             InputConstants.Type.KEYSYM,
-            InputConstants.KEY_O,
+            InputConstants.KEY_BACKSPACE,
             KEY_CATEGORY
         ));
 
@@ -55,39 +59,57 @@ public final class TeamcraftConfigClient {
     public static void requestOpen(Screen parent) {
         Minecraft client = Minecraft.getInstance();
         if (!ClientPlayNetworking.canSend(ConfigRequestPayload.TYPE)) {
-            notifyPlayer(client, "teamcraft.gui.error.server_unsupported");
+            notifyPlayer(client, TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
             return;
         }
 
         pendingParent = parent;
         ClientPlayNetworking.send(ConfigRequestPayload.INSTANCE);
         if (client.player != null) {
-            client.player.sendOverlayMessage(Component.translatable("teamcraft.gui.loading"));
+            client.player.sendOverlayMessage(Component.translatable(TeamcraftTranslations.GUI_LOADING.key()));
         }
     }
 
-    public static boolean save(TeamcraftConfigData config, boolean buildTeams) {
+    public static boolean save(TeamcraftConfigData config, List<String> candidates, boolean buildTeams) {
         if (!ClientPlayNetworking.canSend(ConfigUpdatePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), "teamcraft.gui.error.server_unsupported");
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
             return false;
         }
-        ClientPlayNetworking.send(new ConfigUpdatePayload(config, buildTeams));
+        ClientPlayNetworking.send(new ConfigUpdatePayload(config, candidates, buildTeams));
         return true;
     }
 
     public static boolean saveOwnTeam(String teamId, String displayName, net.minecraft.world.scores.TeamColor color,
                                       boolean friendlyFire) {
         if (!ClientPlayNetworking.canSend(TeamUpdatePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), "teamcraft.gui.error.server_unsupported");
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
             return false;
         }
         ClientPlayNetworking.send(new TeamUpdatePayload(teamId, displayName, color, friendlyFire));
         return true;
     }
 
+    public static boolean disbandTeam(String teamId) {
+        if (!ClientPlayNetworking.canSend(TeamDeletePayload.TYPE)) {
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            return false;
+        }
+        ClientPlayNetworking.send(new TeamDeletePayload(TeamDeletePayload.Target.ONE, teamId));
+        return true;
+    }
+
+    public static boolean clearAllTeams() {
+        if (!ClientPlayNetworking.canSend(TeamDeletePayload.TYPE)) {
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            return false;
+        }
+        ClientPlayNetworking.send(new TeamDeletePayload(TeamDeletePayload.Target.ALL));
+        return true;
+    }
+
     public static boolean refresh() {
         if (!ClientPlayNetworking.canSend(ConfigRequestPayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), "teamcraft.gui.error.server_unsupported");
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
             return false;
         }
         ClientPlayNetworking.send(ConfigRequestPayload.INSTANCE);
@@ -100,11 +122,17 @@ public final class TeamcraftConfigClient {
             configScreen.handleServerResponse(payload);
             return;
         }
+        if (current instanceof TeamDetailsScreen detailsScreen) {
+            detailsScreen.handleServerResponse(payload);
+            return;
+        }
 
         if (payload.response() == ConfigSyncPayload.Response.OPENED) {
             client.gui.setScreen(new TeamcraftConfigScreen(
                 pendingParent,
                 payload.config(),
+                payload.candidates(),
+                payload.onlinePlayers(),
                 payload.ownTeam(),
                 payload.teams()
             ));
@@ -112,15 +140,17 @@ public final class TeamcraftConfigClient {
         }
 
         String key = switch (payload.response()) {
-            case SAVED -> "teamcraft.gui.saved";
-            case BUILT -> "teamcraft.gui.built";
-            case TEAM_SAVED -> "teamcraft.gui.team_saved";
-            case PERMISSION_DENIED -> "teamcraft.gui.error.permission";
-            case NO_CANDIDATES -> "teamcraft.gui.error.no_candidates";
-            case TEAMS_EXIST -> "teamcraft.gui.error.teams_exist";
-            case TOO_MANY_TEAMS -> "teamcraft.gui.error.too_many_teams";
-            case TEAM_NOT_FOUND -> "teamcraft.gui.error.team_not_found";
-            case INVALID -> "teamcraft.gui.error.invalid_server";
+            case SAVED -> TeamcraftTranslations.GUI_SAVED.key();
+            case BUILT -> TeamcraftTranslations.GUI_BUILT.key();
+            case TEAM_SAVED -> TeamcraftTranslations.GUI_TEAM_SAVED.key();
+            case PERMISSION_DENIED -> TeamcraftTranslations.GUI_ERROR_PERMISSION.key();
+            case NO_CANDIDATES -> TeamcraftTranslations.GUI_ERROR_NO_CANDIDATES.key();
+            case TEAMS_EXIST -> TeamcraftTranslations.GUI_ERROR_TEAMS_EXIST.key();
+            case TOO_MANY_TEAMS -> TeamcraftTranslations.GUI_ERROR_TOO_MANY_TEAMS.key();
+            case TEAM_NOT_FOUND -> TeamcraftTranslations.GUI_ERROR_TEAM_NOT_FOUND.key();
+            case TEAM_DISBANDED -> TeamcraftTranslations.GUI_DETAILS_DISBANDED.key();
+            case ALL_TEAMS_CLEARED -> TeamcraftTranslations.GUI_ALL_TEAMS_CLEARED.key();
+            case INVALID -> TeamcraftTranslations.GUI_ERROR_INVALID_SERVER.key();
             case OPENED -> throw new IllegalStateException("Handled above");
         };
         notifyPlayer(client, key);

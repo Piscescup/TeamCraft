@@ -13,6 +13,8 @@ import java.util.List;
 public record ConfigSyncPayload(
     Response response,
     TeamcraftConfigData config,
+    List<String> candidates,
+    List<String> onlinePlayers,
     TeamInfoData ownTeam,
     List<TeamInfoData> teams
 ) implements CustomPacketPayload {
@@ -21,6 +23,8 @@ public record ConfigSyncPayload(
         CustomPacketPayload.codec(ConfigSyncPayload::write, ConfigSyncPayload::new);
 
     public ConfigSyncPayload {
+        candidates = List.copyOf(candidates);
+        onlinePlayers = List.copyOf(onlinePlayers);
         teams = List.copyOf(teams);
     }
 
@@ -28,6 +32,8 @@ public record ConfigSyncPayload(
         this(
             Response.fromId(buffer.readVarInt()),
             TeamcraftConfigData.read(buffer),
+            readNames(buffer, "candidate", TeamcraftConfigData.MAX_CANDIDATES),
+            readNames(buffer, "online player", TeamcraftConfigData.MAX_CANDIDATES),
             buffer.readBoolean() ? TeamInfoData.read(buffer) : null,
             readTeams(buffer)
         );
@@ -36,6 +42,8 @@ public record ConfigSyncPayload(
     private void write(RegistryFriendlyByteBuf buffer) {
         buffer.writeVarInt(this.response.ordinal());
         this.config.write(buffer);
+        writeNames(buffer, this.candidates);
+        writeNames(buffer, this.onlinePlayers);
         buffer.writeBoolean(this.ownTeam != null);
         if (this.ownTeam != null) {
             this.ownTeam.write(buffer);
@@ -61,7 +69,9 @@ public record ConfigSyncPayload(
         NO_CANDIDATES,
         TEAMS_EXIST,
         TOO_MANY_TEAMS,
-        TEAM_NOT_FOUND;
+        TEAM_NOT_FOUND,
+        TEAM_DISBANDED,
+        ALL_TEAMS_CLEARED;
 
         private static Response fromId(int id) {
             if (id < 0 || id >= values().length) {
@@ -81,5 +91,24 @@ public record ConfigSyncPayload(
             teams.add(TeamInfoData.read(buffer));
         }
         return teams;
+    }
+
+    private static void writeNames(RegistryFriendlyByteBuf buffer, List<String> names) {
+        buffer.writeVarInt(names.size());
+        for (String name : names) {
+            buffer.writeUtf(name, TeamcraftConfigData.MAX_NAME_LENGTH);
+        }
+    }
+
+    private static List<String> readNames(RegistryFriendlyByteBuf buffer, String field, int maximum) {
+        int size = buffer.readVarInt();
+        if (size < 0 || size > maximum) {
+            throw new IllegalArgumentException("Invalid TeamCraft " + field + " list size: " + size);
+        }
+        List<String> names = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            names.add(buffer.readUtf(TeamcraftConfigData.MAX_NAME_LENGTH));
+        }
+        return names;
     }
 }

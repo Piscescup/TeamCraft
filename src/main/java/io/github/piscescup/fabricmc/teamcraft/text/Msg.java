@@ -24,12 +24,15 @@ import java.util.Map;
  */
 public final class Msg
 {
-    private static final String KEY_PREFIX = "teamcraft.";
     private static final Map<String, TeamColor> BY_WORD = new HashMap<>();
+    private static final Map<String, String> EN_US_FALLBACK_BY_KEY = new HashMap<>();
 
     static {
         for (TeamColor color : TeamColor.values()) {
             BY_WORD.put(color.getSerializedName().toLowerCase(Locale.ROOT), color);
+        }
+        for (TeamcraftTranslations translation : TeamcraftTranslations.values()) {
+            EN_US_FALLBACK_BY_KEY.put(translation.key(), translation.enUsTranslation());
         }
     }
 
@@ -37,14 +40,19 @@ public final class Msg
     }
 
     /**
-     * Creates a translated component in the mod namespace.
+     * Creates a translated component from a complete translation key. TeamCraft
+     * keys include an English fallback so scoreboard data and server messages
+     * remain readable on clients that do not have the mod's language files.
      *
-     * @param key  the part after {@code teamcraft.}
+     * @param key  the complete key returned by {@link TeamcraftTranslations#key()}
      * @param args translation arguments
      * @return a mutable translated component
      */
     public static MutableComponent tr(String key, Object... args) {
-        return Component.translatable(KEY_PREFIX + key, args);
+        String fallback = EN_US_FALLBACK_BY_KEY.get(key);
+        return fallback == null
+            ? Component.translatable(key, args)
+            : Component.translatableWithFallback(key, fallback, args);
     }
 
     /**
@@ -139,7 +147,25 @@ public final class Msg
      * Renders the localized color name in its own color.
      */
     public static MutableComponent colorName(TeamColor color) {
-        return tr("color." + color.getSerializedName()).withColor(color.textColor());
+        TeamcraftTranslations translation = switch (color) {
+            case BLACK -> TeamcraftTranslations.COLOR_BLACK;
+            case DARK_BLUE -> TeamcraftTranslations.COLOR_DARK_BLUE;
+            case DARK_GREEN -> TeamcraftTranslations.COLOR_DARK_GREEN;
+            case DARK_AQUA -> TeamcraftTranslations.COLOR_DARK_AQUA;
+            case DARK_RED -> TeamcraftTranslations.COLOR_DARK_RED;
+            case DARK_PURPLE -> TeamcraftTranslations.COLOR_DARK_PURPLE;
+            case GOLD -> TeamcraftTranslations.COLOR_GOLD;
+            case GRAY -> TeamcraftTranslations.COLOR_GRAY;
+            case DARK_GRAY -> TeamcraftTranslations.COLOR_DARK_GRAY;
+            case BLUE -> TeamcraftTranslations.COLOR_BLUE;
+            case GREEN -> TeamcraftTranslations.COLOR_GREEN;
+            case AQUA -> TeamcraftTranslations.COLOR_AQUA;
+            case RED -> TeamcraftTranslations.COLOR_RED;
+            case LIGHT_PURPLE -> TeamcraftTranslations.COLOR_LIGHT_PURPLE;
+            case YELLOW -> TeamcraftTranslations.COLOR_YELLOW;
+            case WHITE -> TeamcraftTranslations.COLOR_WHITE;
+        };
+        return tr(translation.key()).withColor(color.textColor());
     }
 
     /**

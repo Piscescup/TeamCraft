@@ -5,11 +5,34 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
+def testClientCount = providers.gradleProperty("test_client_count")
+        .get()
+        .toInteger()
 
 base {
-    archivesName = project.archives_base_name
+    // <name>-<version>-<loader>-<loader_version>-mc<mc_version>
+    archivesName = project.archives_base_name + "-" + version + "-"
+                    project.loader_name + "-" + project.loader_version + "-"
+                    "mc" + project.minecraft_version
 }
 
+loom {
+    runs {
+        for (i in 1..testClientCount) {
+            create("testClient$i") {
+                client()
+
+                displayName.set("Minecraft Test Client $i")
+                runDirectory.set(file("run/client$i"))
+                generateRunConfig.set(true)
+
+                programArguments.addAll(
+                        "--username", "DevPlayer$i"
+                )
+            }
+        }
+    }
+}
 
 fabricApi {
     configureDataGeneration {
@@ -31,6 +54,9 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Minecraft ships ICU4J at runtime; datagen uses its Chinese transliterator.
+    compileOnly "com.ibm.icu:icu4j:78.3"
 }
 
 processResources {

@@ -2,6 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft.team;
 
 import com.mojang.serialization.Codec;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.StringRepresentable;
 import org.jspecify.annotations.NonNull;
@@ -22,7 +23,6 @@ public enum SplitMode implements StringRepresentable {
      * Candidates are shuffled before being assigned.
      */
     RANDOM("random");
-    private static final String MODE_KEY_PREFIX = "mode.";
 
     /**
      * The {@link Codec} of the {@link SplitMode}.
@@ -50,7 +50,10 @@ public enum SplitMode implements StringRepresentable {
      * @return the localized display name of this mode
      */
     public MutableComponent displayName() {
-        return Msg.tr(MODE_KEY_PREFIX + this.name);
+        return Msg.tr(switch (this) {
+            case FIXED -> TeamcraftTranslations.MODE_FIXED.key();
+            case RANDOM -> TeamcraftTranslations.MODE_RANDOM.key();
+        });
     }
 
     @NonNull

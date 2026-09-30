@@ -7,6 +7,7 @@ import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner.SplitPlan;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.Commands;
@@ -19,6 +20,7 @@ import net.minecraft.world.scores.PlayerTeam;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +33,7 @@ public final class TeamcraftConfigNetworking {
         PayloadTypeRegistry.serverboundPlay().register(ConfigRequestPayload.TYPE, ConfigRequestPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ConfigUpdatePayload.TYPE, ConfigUpdatePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TeamUpdatePayload.TYPE, TeamUpdatePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(TeamDeletePayload.TYPE, TeamDeletePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ConfigSyncPayload.TYPE, ConfigSyncPayload.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(ConfigRequestPayload.TYPE, (payload, context) -> {
@@ -52,12 +55,15 @@ public final class TeamcraftConfigNetworking {
             }
 
             TeamcraftConfigData config = payload.config();
-            if (config.validate() != TeamcraftConfigData.ValidationResult.VALID) {
+            if (config.validate() != TeamcraftConfigData.ValidationResult.VALID
+                || !validCandidates(payload.candidates())) {
                 send(player, ConfigSyncPayload.Response.INVALID);
                 return;
             }
 
             config.applyTo(session);
+            session.getCandidates().clear();
+            session.getCandidates().addAll(payload.candidates());
             ConfigSyncPayload.Response response = payload.buildTeams()
                 ? buildTeams(context.server())
                 : ConfigSyncPayload.Response.SAVED;
@@ -90,6 +96,30 @@ public final class TeamcraftConfigNetworking {
             TeamAssigner.applyPrefix(team);
             send(player, ConfigSyncPayload.Response.TEAM_SAVED);
         });
+
+        ServerPlayNetworking.registerGlobalReceiver(TeamDeletePayload.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            if (!hasConfigPermission(player)) {
+                send(player, ConfigSyncPayload.Response.PERMISSION_DENIED);
+                return;
+            }
+
+            ServerScoreboard board = context.server().getScoreboard();
+            TeamSession session = TeamSessionManager.get();
+            if (payload.target() == TeamDeletePayload.Target.ALL) {
+                TeamAssigner.clear(board);
+                session.getCreatedTeams().clear();
+                send(player, ConfigSyncPayload.Response.ALL_TEAMS_CLEARED);
+                return;
+            }
+
+            if (!TeamAssigner.disband(board, payload.teamId())) {
+                send(player, ConfigSyncPayload.Response.TEAM_NOT_FOUND);
+                return;
+            }
+            session.getCreatedTeams().remove(payload.teamId());
+            send(player, ConfigSyncPayload.Response.TEAM_DISBANDED);
+        });
     }
 
     private static ConfigSyncPayload.Response buildTeams(MinecraftServer server) {
@@ -120,7 +150,7 @@ public final class TeamcraftConfigNetworking {
                 ServerPlayer player = playerList.getPlayerByName(member);
                 if (player != null) {
                     player.sendSystemMessage(Msg.success(
-                        "result.assigned",
+                        TeamcraftTranslations.RESULT_ASSIGNED.key(),
                         plan.displayName().copy().withColor(plan.color().textColor())
                     ));
                 }
@@ -134,8 +164,16 @@ public final class TeamcraftConfigNetworking {
         return Commands.hasPermission(Commands.LEVEL_ALL).test(player.createCommandSourceStack());
     }
 
+    private static boolean validCandidates(List<String> candidates) {
+        return candidates.size() <= TeamcraftConfigData.MAX_CANDIDATES
+            && new LinkedHashSet<>(candidates).size() == candidates.size()
+            && candidates.stream().noneMatch(name ->
+                name.isBlank() || name.length() > TeamcraftConfigData.MAX_NAME_LENGTH);
+    }
+
     private static void send(ServerPlayer player, ConfigSyncPayload.Response response) {
         ServerScoreboard board = player.createCommandSourceStack().getServer().getScoreboard();
+        TeamSession session = TeamSessionManager.get();
         List<TeamInfoData> teams = board.getPlayerTeams().stream()
             .filter(team -> team.getName().startsWith(TeamAssigner.TEAM_ID_PREFIX))
             .sorted(Comparator.comparing(PlayerTeam::getName))
@@ -147,9 +185,17 @@ public final class TeamcraftConfigNetworking {
             ? TeamInfoData.fromTeam(own)
             : null;
 
+        List<String> onlinePlayers = player.createCommandSourceStack().getServer().getPlayerList().getPlayers().stream()
+            .map(online -> online.getGameProfile().name())
+            .sorted(String.CASE_INSENSITIVE_ORDER)
+            .limit(TeamcraftConfigData.MAX_CANDIDATES)
+            .toList();
+
         ServerPlayNetworking.send(player, new ConfigSyncPayload(
             response,
-            TeamcraftConfigData.fromSession(TeamSessionManager.get()),
+            TeamcraftConfigData.fromSession(session),
+            session.getCandidates(),
+            onlinePlayers,
             ownTeam,
             teams
         ));
