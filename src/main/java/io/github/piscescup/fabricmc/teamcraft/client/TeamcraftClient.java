@@ -1,5 +1,6 @@
 package io.github.piscescup.fabricmc.teamcraft.client;
 
+import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigClient;
 import net.fabricmc.api.ClientModInitializer;
 
 /**
@@ -10,5 +11,6 @@ public class TeamcraftClient
 {
     @Override
     public void onInitializeClient() {
+        TeamcraftConfigClient.register();
     }
 }
