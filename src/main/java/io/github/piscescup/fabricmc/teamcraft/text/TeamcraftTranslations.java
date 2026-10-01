@@ -143,13 +143,13 @@ public enum TeamcraftTranslations {
     GUI_CANDIDATES_ONLINE("teamcraft.gui.candidates.online", "在线", "Online"),
     GUI_CANDIDATES_PLAYER_EXAMPLE(
         "teamcraft.gui.candidates.player.example",
-        "已勾选的玩家会参加下一次分队。",
-        "A checked player will be included the next time teams are created."
+        "已勾选的玩家会参加下一次分队；上下拖动可调整顺序。",
+        "A checked player joins the next split; drag it vertically to change its order."
     ),
     GUI_CANDIDATES_PLAYER_TOOLTIP(
         "teamcraft.gui.candidates.player.tooltip",
-        "点击将该玩家加入或移出候选名单；已选择的离线玩家会保留，直到手动移除。",
-        "Click to add or remove this player from the candidate list. Offline selected players remain available until removed."
+        "点击将该玩家加入或移出候选名单；按住已选择的玩家上下拖动可调整顺序。离线玩家会保留，直到手动移除。",
+        "Click to add or remove this player. Hold and drag a selected player vertically to reorder the list. Offline players remain until removed."
     ),
     GUI_CANDIDATES_SELECT_ALL("teamcraft.gui.candidates.select_all", "全选在线玩家", "Select All Online"),
     GUI_CANDIDATES_SUMMARY("teamcraft.gui.candidates.summary", "已选择 %1$s 人 • 在线 %2$s 人", "%1$s selected • %2$s online"),
@@ -158,13 +158,13 @@ public enum TeamcraftTranslations {
     GUI_CATEGORY_CANDIDATES("teamcraft.gui.category.candidates", "候选玩家", "Candidate Players"),
     GUI_CATEGORY_CANDIDATES_EXAMPLE(
         "teamcraft.gui.category.candidates.example",
-        "先全选在线玩家，再逐个点击即可调整候选名单。",
-        "Select everyone online, then click individual players to adjust the list."
+        "先全选在线玩家，再点击增删；拖动已选择的玩家可调整顺序。",
+        "Select everyone online, click to add or remove players, and drag selected players to reorder them."
     ),
     GUI_CATEGORY_CANDIDATES_TOOLTIP(
         "teamcraft.gui.category.candidates.tooltip",
-        "选择参加下一次分队的玩家；可以逐个选择，也可以一次选择所有在线玩家。",
-        "Choose the players to include in the next split. Online players can be selected individually or all at once."
+        "选择参加下一次分队的玩家；可以逐个选择或全选在线玩家，并可拖动调整顺序。",
+        "Choose players for the next split, select them individually or all at once, and drag them to change their order."
     ),
     GUI_CATEGORY_OWN_TEAM("teamcraft.gui.category.own_team", "所属队伍信息配置", "My Team Settings"),
     GUI_CATEGORY_SPLIT("teamcraft.gui.category.split", "分队设置", "Split Settings"),

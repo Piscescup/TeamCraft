@@ -2,8 +2,11 @@ package io.github.piscescup.fabricmc.teamcraft.team;
 
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.RandomAccess;
 
 /**
  * The mutable per-server state of one split-teams workflow: the ordered candidate
@@ -28,14 +31,16 @@ public final class TeamSession
      */
     public static final int DEFAULT_TEAM_SIZE = 4;
 
-    private final List<String> candidates = new ArrayList<>();
-    private final List<String> createdTeams = new ArrayList<>();
+    private final List<String> candidates = new DirtyList<>(this::markChanged);
+    private final List<String> createdTeams = new DirtyList<>(this::markChanged);
     private int teamSize = DEFAULT_TEAM_SIZE;
     private Integer teamCount = null;
     private SplitMode mode = SplitMode.RANDOM;
     private boolean friendlyFire = false;
     private List<TeamcraftColor> colors = new ArrayList<>();
     private List<String> names = new ArrayList<>();
+    private Runnable changeListener = () -> {
+    };
 
     /**
      * @return the ordered, de-duplicated candidate usernames
@@ -64,8 +69,11 @@ public final class TeamSession
      * @param teamSize players per team, {@code >= 1}
      */
     public void setTeamSize(int teamSize) {
-        this.teamSize = teamSize;
-        this.teamCount = null;
+        if (this.teamSize != teamSize || this.teamCount != null) {
+            this.teamSize = teamSize;
+            this.teamCount = null;
+            markChanged();
+        }
     }
 
     /**
@@ -81,7 +89,10 @@ public final class TeamSession
      * @param teamCount number of teams, {@code >= 1}
      */
     public void setTeamCount(int teamCount) {
-        this.teamCount = teamCount;
+        if (!Objects.equals(this.teamCount, teamCount)) {
+            this.teamCount = teamCount;
+            markChanged();
+        }
     }
 
     /**
@@ -95,7 +106,11 @@ public final class TeamSession
      * @param mode the split strategy
      */
     public void setMode(SplitMode mode) {
-        this.mode = mode;
+        Objects.requireNonNull(mode, "mode");
+        if (this.mode != mode) {
+            this.mode = mode;
+            markChanged();
+        }
     }
 
     /**
@@ -109,7 +124,10 @@ public final class TeamSession
      * @param friendlyFire whether members of the same team may damage each other
      */
     public void setFriendlyFire(boolean friendlyFire) {
-        this.friendlyFire = friendlyFire;
+        if (this.friendlyFire != friendlyFire) {
+            this.friendlyFire = friendlyFire;
+            markChanged();
+        }
     }
 
     /**
@@ -123,7 +141,11 @@ public final class TeamSession
      * @param colors the color order to use, in team order; empty resets to default
      */
     public void setColors(List<TeamcraftColor> colors) {
-        this.colors = new ArrayList<>(colors);
+        List<TeamcraftColor> replacement = new ArrayList<>(colors);
+        if (!this.colors.equals(replacement)) {
+            this.colors = replacement;
+            markChanged();
+        }
     }
 
     /**
@@ -137,19 +159,52 @@ public final class TeamSession
      * @param names the display names to use, in team order
      */
     public void setNames(List<String> names) {
-        this.names = new ArrayList<>(names);
+        List<String> replacement = new ArrayList<>(names);
+        if (!this.names.equals(replacement)) {
+            this.names = replacement;
+            markChanged();
+        }
     }
 
     /**
      * Restores every configuration option to its default value.
      */
     public void resetConfig() {
+        boolean changed = this.teamSize != DEFAULT_TEAM_SIZE
+            || this.teamCount != null
+            || this.mode != SplitMode.RANDOM
+            || this.friendlyFire
+            || !this.colors.isEmpty()
+            || !this.names.isEmpty();
         this.teamSize = DEFAULT_TEAM_SIZE;
         this.teamCount = null;
         this.mode = SplitMode.RANDOM;
         this.friendlyFire = false;
         this.colors = new ArrayList<>();
         this.names = new ArrayList<>();
+        if (changed) {
+            markChanged();
+        }
+    }
+
+    /**
+     * Restores candidates, created-team references and configuration defaults.
+     */
+    public void resetAll() {
+        this.candidates.clear();
+        this.createdTeams.clear();
+        resetConfig();
+    }
+
+    /**
+     * Installs the callback used by the server persistence adapter.
+     */
+    public void setChangeListener(Runnable changeListener) {
+        this.changeListener = Objects.requireNonNull(changeListener, "changeListener");
+    }
+
+    private void markChanged() {
+        this.changeListener.run();
     }
 
     /**
@@ -190,5 +245,58 @@ public final class TeamSession
             }
         }
         return sizes;
+    }
+
+    /** A list implementation that marks the owning session dirty on mutation. */
+    private static final class DirtyList<E> extends AbstractList<E> implements RandomAccess {
+        private final List<E> values = new ArrayList<>();
+        private final Runnable changed;
+
+        private DirtyList(Runnable changed) {
+            this.changed = changed;
+        }
+
+        @Override
+        public E get(int index) {
+            return this.values.get(index);
+        }
+
+        @Override
+        public int size() {
+            return this.values.size();
+        }
+
+        @Override
+        public E set(int index, E element) {
+            E previous = this.values.set(index, element);
+            if (!Objects.equals(previous, element)) {
+                this.changed.run();
+            }
+            return previous;
+        }
+
+        @Override
+        public void add(int index, E element) {
+            this.values.add(index, element);
+            this.modCount++;
+            this.changed.run();
+        }
+
+        @Override
+        public E remove(int index) {
+            E removed = this.values.remove(index);
+            this.modCount++;
+            this.changed.run();
+            return removed;
+        }
+
+        @Override
+        public void clear() {
+            if (!this.values.isEmpty()) {
+                this.values.clear();
+                this.modCount++;
+                this.changed.run();
+            }
+        }
     }
 }
