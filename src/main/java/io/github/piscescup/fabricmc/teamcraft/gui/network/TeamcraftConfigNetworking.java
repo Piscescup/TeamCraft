@@ -17,12 +17,13 @@ import net.minecraft.server.ServerScoreboard;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.scores.PlayerTeam;
+//#if MC >= 12111
 import org.jspecify.annotations.NonNull;
+//#endif
 
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 
 /** Common-side registration and validation for the configuration GUI protocol. */
 public final class TeamcraftConfigNetworking {
@@ -30,11 +31,19 @@ public final class TeamcraftConfigNetworking {
     }
 
     public static void register() {
+        //#if MC >= 260102
         PayloadTypeRegistry.serverboundPlay().register(ConfigRequestPayload.TYPE, ConfigRequestPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ConfigUpdatePayload.TYPE, ConfigUpdatePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TeamUpdatePayload.TYPE, TeamUpdatePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TeamDeletePayload.TYPE, TeamDeletePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ConfigSyncPayload.TYPE, ConfigSyncPayload.CODEC);
+        //#else
+        //$$ PayloadTypeRegistry.playC2S().register(ConfigRequestPayload.TYPE, ConfigRequestPayload.CODEC);
+        //$$ PayloadTypeRegistry.playC2S().register(ConfigUpdatePayload.TYPE, ConfigUpdatePayload.CODEC);
+        //$$ PayloadTypeRegistry.playC2S().register(TeamUpdatePayload.TYPE, TeamUpdatePayload.CODEC);
+        //$$ PayloadTypeRegistry.playC2S().register(TeamDeletePayload.TYPE, TeamDeletePayload.CODEC);
+        //$$ PayloadTypeRegistry.playS2C().register(ConfigSyncPayload.TYPE, ConfigSyncPayload.CODEC);
+        //#endif
 
         ServerPlayNetworking.registerGlobalReceiver(ConfigRequestPayload.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
@@ -91,7 +100,7 @@ public final class TeamcraftConfigNetworking {
             }
 
             team.setDisplayName(Component.literal(payload.displayName().trim()));
-            team.setColor(Optional.of(payload.color()));
+            payload.color().applyTo(team);
             team.setAllowFriendlyFire(payload.friendlyFire());
             TeamAssigner.applyPrefix(team);
             send(player, ConfigSyncPayload.Response.TEAM_SAVED);
@@ -159,10 +168,16 @@ public final class TeamcraftConfigNetworking {
         return ConfigSyncPayload.Response.BUILT;
     }
 
+    //#if MC >= 12111
     private static boolean hasConfigPermission(@NonNull ServerPlayer player) {
         // Keep the GUI permission identical to the existing /teamcraft command root.
         return Commands.hasPermission(Commands.LEVEL_ALL).test(player.createCommandSourceStack());
     }
+    //#else
+    //$$ private static boolean hasConfigPermission(ServerPlayer player) {
+    //$$     return player.createCommandSourceStack().hasPermission(0);
+    //$$ }
+    //#endif
 
     private static boolean validCandidates(List<String> candidates) {
         return candidates.size() <= TeamcraftConfigData.MAX_CANDIDATES
@@ -186,7 +201,13 @@ public final class TeamcraftConfigNetworking {
             : null;
 
         List<String> onlinePlayers = player.createCommandSourceStack().getServer().getPlayerList().getPlayers().stream()
-            .map(online -> online.getGameProfile().name())
+            .map(online ->
+                //#if MC >= 12110
+                online.getGameProfile().name()
+                //#else
+                //$$ online.getGameProfile().getName()
+                //#endif
+            )
             .sorted(String.CASE_INSENSITIVE_ORDER)
             .limit(TeamcraftConfigData.MAX_CANDIDATES)
             .toList();

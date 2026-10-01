@@ -2,8 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft.gui;
 
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigSyncPayload;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
-import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
-import net.fabricmc.api.EnvType;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -60,7 +59,7 @@ public final class TeamDetailsScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         graphics.fill(this.panelLeft, this.panelTop, this.panelRight, this.panelBottom, 0xF0101318);
         graphics.fill(this.panelLeft, this.panelTop, this.panelRight, this.panelTop + 34, 0xFF1B2128);
-        graphics.horizontalLine(this.panelLeft, this.panelRight, this.panelBottom - 38, 0xFF39424C);
+        graphics.fill(this.panelLeft, this.panelBottom - 38, this.panelRight, this.panelBottom - 37, 0xFF39424C);
         graphics.centeredText(this.font, this.title, (this.panelLeft + this.panelRight) / 2,
             this.panelTop + 12, 0xFFFFFFFF);
 
@@ -73,18 +72,26 @@ public final class TeamDetailsScreen extends Screen {
             Msg.colorName(this.team.color()).copy().withColor(this.team.color().textColor()));
         y += ROW_HEIGHT + 10;
         graphics.text(this.font, Component.translatable(TeamcraftTranslations.GUI_DETAILS_MEMBERS.key(), this.team.members().size())
-            .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD), this.panelLeft + 18, y + 6, 0xFFFFFFFF);
+            .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD).getVisualOrderText(), this.panelLeft + 18, y + 6, 0xFFFFFFFF);
         y += ROW_HEIGHT + 4;
         for (int i = 0; i < this.team.members().size(); i++) {
             int rowY = y + i * (ROW_HEIGHT + 2);
             graphics.fill(this.panelLeft + 14, rowY, this.panelRight - 14, rowY + ROW_HEIGHT, 0x8020272E);
             graphics.text(this.font, Component.translatable(
                 TeamcraftTranslations.GUI_DETAILS_MEMBER.key(), i + 1, this.team.members().get(i)
-            ), this.panelLeft + 22, rowY + 7, 0xFFE6E6E6);
+            ).getVisualOrderText(), this.panelLeft + 22, rowY + 7, 0xFFE6E6E6);
         }
         graphics.disableScissor();
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
+
+    //#if MC < 12108
+    //$$ /** Prevents the pre-1.21.8 superclass renderer from blurring this custom panel. */
+    //$$ @Override
+    //$$ public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    //$$     // The custom panel is the complete background for this in-game screen.
+    //$$ }
+    //#endif
 
     private void drawRow(GuiGraphicsExtractor graphics, int y, Component label, Component value) {
         graphics.fill(this.panelLeft + 14, y, this.panelRight - 14, y + ROW_HEIGHT, 0x8020272E);
@@ -106,7 +113,11 @@ public final class TeamDetailsScreen extends Screen {
 
     @Override
     public void onClose() {
+        //#if MC >= 260200
         this.minecraft.gui.setScreen(this.parent);
+        //#else
+        //$$ this.minecraft.setScreen(this.parent);
+        //#endif
     }
 
     @Override
@@ -114,14 +125,20 @@ public final class TeamDetailsScreen extends Screen {
         return false;
     }
 
+    //#if MC >= 12110
     @Override
     public boolean isInGameUi() {
         return true;
     }
+    //#endif
 
     public void handleServerResponse(ConfigSyncPayload payload) {
         this.waitingForServer = false;
+        //#if MC >= 260200
         this.minecraft.gui.setScreen(this.parent);
+        //#else
+        //$$ this.minecraft.setScreen(this.parent);
+        //#endif
         this.parent.handleServerResponse(payload);
     }
 

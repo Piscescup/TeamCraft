@@ -1,0 +1,5 @@
+net.minecraft.client.gui.GuiGraphicsExtractor net.minecraft.client.gui.GuiGraphics
+net.minecraft.client.gui.GuiGraphicsExtractor centeredText() drawCenteredString()
+net.minecraft.client.gui.GuiGraphicsExtractor text() drawString()
+net.minecraft.client.gui.screens.Screen extractRenderState() render()
+net.fabricmc.fabric.api.datagen.v1.FabricPackOutput net.fabricmc.fabric.api.datagen.v1.FabricDataOutput

@@ -1,6 +1,6 @@
 package io.github.piscescup.fabricmc.teamcraft.team;
 
-import net.minecraft.world.scores.TeamColor;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +17,11 @@ public final class TeamSession
     /**
      * The palette used when no custom colors are configured, ordered for readability.
      */
-    public static final List<TeamColor> DEFAULT_PALETTE = List.of(
-        TeamColor.RED, TeamColor.BLUE, TeamColor.GREEN, TeamColor.YELLOW,
-        TeamColor.AQUA, TeamColor.LIGHT_PURPLE, TeamColor.GOLD, TeamColor.DARK_AQUA,
-        TeamColor.DARK_GREEN, TeamColor.DARK_PURPLE, TeamColor.WHITE, TeamColor.GRAY,
-        TeamColor.DARK_RED, TeamColor.DARK_BLUE, TeamColor.DARK_GRAY, TeamColor.BLACK);
+    public static final List<TeamcraftColor> DEFAULT_PALETTE = List.of(
+        TeamcraftColor.RED, TeamcraftColor.BLUE, TeamcraftColor.GREEN, TeamcraftColor.YELLOW,
+        TeamcraftColor.AQUA, TeamcraftColor.LIGHT_PURPLE, TeamcraftColor.GOLD, TeamcraftColor.DARK_AQUA,
+        TeamcraftColor.DARK_GREEN, TeamcraftColor.DARK_PURPLE, TeamcraftColor.WHITE, TeamcraftColor.GRAY,
+        TeamcraftColor.DARK_RED, TeamcraftColor.DARK_BLUE, TeamcraftColor.DARK_GRAY, TeamcraftColor.BLACK);
 
     /**
      * The default number of players per team.
@@ -34,7 +34,7 @@ public final class TeamSession
     private Integer teamCount = null;
     private SplitMode mode = SplitMode.RANDOM;
     private boolean friendlyFire = false;
-    private List<TeamColor> colors = new ArrayList<>();
+    private List<TeamcraftColor> colors = new ArrayList<>();
     private List<String> names = new ArrayList<>();
 
     /**
@@ -115,14 +115,14 @@ public final class TeamSession
     /**
      * @return the configured color order; empty means the default palette
      */
-    public List<TeamColor> getColors() {
+    public List<TeamcraftColor> getColors() {
         return this.colors;
     }
 
     /**
      * @param colors the color order to use, in team order; empty resets to default
      */
-    public void setColors(List<TeamColor> colors) {
+    public void setColors(List<TeamcraftColor> colors) {
         this.colors = new ArrayList<>(colors);
     }
 
@@ -155,7 +155,7 @@ public final class TeamSession
     /**
      * @return the palette in effect: the configured colors, or the default palette
      */
-    public List<TeamColor> effectiveColors() {
+    public List<TeamcraftColor> effectiveColors() {
         return this.colors.isEmpty() ? DEFAULT_PALETTE : this.colors;
     }
 

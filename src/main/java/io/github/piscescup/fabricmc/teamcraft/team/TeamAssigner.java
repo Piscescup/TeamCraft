@@ -1,16 +1,15 @@
 package io.github.piscescup.fabricmc.teamcraft.team;
 
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.TeamColor;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Computes a split plan from a {@link TeamSession} and applies it to (or removes
@@ -39,7 +38,7 @@ public final class TeamAssigner
      * @param displayName the user-visible team name
      * @param members     the usernames assigned to this team
      */
-    public record SplitPlan(String teamId, TeamColor color, Component displayName, List<String> members)
+    public record SplitPlan(String teamId, TeamcraftColor color, Component displayName, List<String> members)
     {
     }
 
@@ -51,14 +50,14 @@ public final class TeamAssigner
      * @param nameOverride   one-shot name list replacing the configured one; {@code null} to use config
      * @return the planned teams, in team order
      */
-    public static List<SplitPlan> buildPlan(TeamSession session, List<TeamColor> colorOverride, List<String> nameOverride) {
+    public static List<SplitPlan> buildPlan(TeamSession session, List<TeamcraftColor> colorOverride, List<String> nameOverride) {
         List<String> players = new ArrayList<>(session.getCandidates());
         if (session.getMode() == SplitMode.RANDOM) {
             Collections.shuffle(players);
         }
 
         int[] sizes = session.teamSizes(players.size());
-        List<TeamColor> palette = (colorOverride != null && !colorOverride.isEmpty())
+        List<TeamcraftColor> palette = (colorOverride != null && !colorOverride.isEmpty())
             ? colorOverride
             : session.effectiveColors();
         List<String> names = (nameOverride != null) ? nameOverride : session.getNames();
@@ -66,7 +65,7 @@ public final class TeamAssigner
         List<SplitPlan> plans = new ArrayList<>(sizes.length);
         int offset = 0;
         for (int i = 0; i < sizes.length; i++) {
-            TeamColor color = palette.get(i % palette.size());
+            TeamcraftColor color = palette.get(i % palette.size());
             Component name = resolveName(names, i, color);
             List<String> members = List.copyOf(players.subList(offset, offset + sizes[i]));
             offset += sizes[i];
@@ -86,7 +85,7 @@ public final class TeamAssigner
     public static void apply(ServerScoreboard board, List<SplitPlan> plans, boolean friendlyFire) {
         for (SplitPlan plan : plans) {
             PlayerTeam team = board.addPlayerTeam(plan.teamId());
-            team.setColor(Optional.of(plan.color()));
+            plan.color().applyTo(team);
             team.setDisplayName(plan.displayName());
             team.setAllowFriendlyFire(friendlyFire);
             applyPrefix(team);
@@ -103,7 +102,7 @@ public final class TeamAssigner
      * @param team the team to restyle
      */
     public static void applyPrefix(PlayerTeam team) {
-        TeamColor color = team.getColor().orElse(TeamColor.WHITE);
+        TeamcraftColor color = TeamcraftColor.ofTeam(team);
         team.setPlayerPrefix(Component.literal("[")
             .append(team.getDisplayName())
             .append("] ")
@@ -167,7 +166,7 @@ public final class TeamAssigner
         return ids;
     }
 
-    private static Component resolveName(List<String> names, int index, TeamColor color) {
+    private static Component resolveName(List<String> names, int index, TeamcraftColor color) {
         if (index < names.size()) {
             return Component.literal(names.get(index));
         }

@@ -14,10 +14,16 @@ import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+//#if MC >= 12110
 import net.minecraft.client.input.MouseButtonEvent;
+//#endif
 import net.minecraft.network.chat.Component;
+//#if MC < 12103
+//$$ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+//$$ import net.minecraft.sounds.SoundEvents;
+//#endif
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.world.scores.TeamColor;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -66,15 +72,15 @@ public final class TeamcraftConfigScreen extends Screen {
     private boolean friendlyFire;
     private List<String> candidates;
     private List<String> onlinePlayers;
-    private List<TeamColor> configuredColors;
-    private TeamColor selectedColor = TeamColor.RED;
+    private List<TeamcraftColor> configuredColors;
+    private TeamcraftColor selectedColor = TeamcraftColor.RED;
     private List<String> configuredNames;
     private String pendingName = "";
 
     private TeamInfoData ownTeam;
     private List<TeamInfoData> teams;
     private String ownTeamName;
-    private TeamColor ownTeamColor = TeamColor.WHITE;
+    private TeamcraftColor ownTeamcraftColor = TeamcraftColor.WHITE;
     private boolean ownTeamFriendlyFire;
     private boolean waitingForServer;
     private ColorMenu colorMenu;
@@ -130,13 +136,14 @@ public final class TeamcraftConfigScreen extends Screen {
             this.panelBottom - 38,
             0xFF151A20
         );
-        graphics.verticalLine(
+        graphics.fill(
             this.panelLeft + this.navigationWidth,
             this.panelTop + 34,
+            this.panelLeft + this.navigationWidth + 1,
             this.panelBottom - 38,
             0xFF39424C
         );
-        graphics.horizontalLine(this.panelLeft, this.panelRight, this.panelBottom - 38, 0xFF39424C);
+        graphics.fill(this.panelLeft, this.panelBottom - 38, this.panelRight, this.panelBottom - 37, 0xFF39424C);
         graphics.centeredText(this.font, this.title, (this.panelLeft + this.panelRight) / 2, this.panelTop + 12, 0xFFFFFFFF);
 
         graphics.enableScissor(this.contentLeft, this.contentTop, this.contentRight, this.contentBottom);
@@ -148,28 +155,68 @@ public final class TeamcraftConfigScreen extends Screen {
         extractColorMenu(graphics, mouseX, mouseY);
     }
 
+    //#if MC < 12108
+    //$$ /**
+    //$$  * Before 1.21.8, {@link Screen#render} draws the screen background before
+    //$$  * its widgets. This screen draws its own translucent panel before calling
+    //$$  * the superclass, so the vanilla blur would otherwise be applied to the
+    //$$  * panel and its contents instead of only to the world behind it.
+    //$$  */
+    //$$ @Override
+    //$$ public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    //$$     // The custom panel is the complete background for this in-game screen.
+    //$$ }
+    //#endif
+
+    //#if MC >= 12110
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (this.handleColorMenuClick(event.x(), event.y(), event.button())) {
+            return true;
+        }
+        return super.mouseClicked(event, doubleClick);
+    }
+    //#else
+    //$$ @Override
+    //$$ public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    //$$     if (this.handleColorMenuClick(mouseX, mouseY, button)) {
+    //$$         return true;
+    //$$     }
+    //$$     return super.mouseClicked(mouseX, mouseY, button);
+    //$$ }
+    //#endif
+
+    /**
+     * Handles one click against the open color menu.
+     *
+     * @return whether the click was consumed by the menu
+     */
+    private boolean handleColorMenuClick(double x, double y, int button) {
         if (this.colorMenu != null) {
             ColorMenu menu = this.colorMenu;
             this.colorMenu = null;
-            if (event.button() == 0 && menu.contains(event.x(), event.y())) {
-                int column = (int) ((event.x() - menu.x) / menu.columnWidth);
-                int row = (int) ((event.y() - menu.y) / menu.rowHeight);
+            if (button == 0 && menu.contains(x, y)) {
+                int column = (int) ((x - menu.x) / menu.columnWidth);
+                int row = (int) ((y - menu.y) / menu.rowHeight);
                 int index = row * menu.columns + column;
-                TeamColor[] colors = TeamColor.values();
+                TeamcraftColor[] colors = TeamcraftColor.values();
                 if (index >= 0 && index < colors.length) {
+                    //#if MC >= 12103
                     AbstractWidget.playButtonClickSound(this.minecraft.getSoundManager());
+                    //#else
+                    //$$ this.minecraft.getSoundManager()
+                    //$$     .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    //#endif
                     menu.onChanged.accept(colors[index]);
                     rebuildWidgets();
                     return true;
                 }
             }
-            if (menu.anchorContains(event.x(), event.y())) {
+            if (menu.anchorContains(x, y)) {
                 return true;
             }
         }
-        return super.mouseClicked(event, doubleClick);
+        return false;
     }
 
     @Override
@@ -191,7 +238,11 @@ public final class TeamcraftConfigScreen extends Screen {
 
     @Override
     public void onClose() {
+        //#if MC >= 260200
         this.minecraft.gui.setScreen(this.parent);
+        //#else
+        //$$ this.minecraft.setScreen(this.parent);
+        //#endif
     }
 
     @Override
@@ -199,10 +250,12 @@ public final class TeamcraftConfigScreen extends Screen {
         return false;
     }
 
+    //#if MC >= 12110
     @Override
     public boolean isInGameUi() {
         return true;
     }
+    //#endif
 
     public void handleServerResponse(ConfigSyncPayload payload) {
         this.waitingForServer = false;
@@ -369,6 +422,7 @@ public final class TeamcraftConfigScreen extends Screen {
 
         addHeader(TeamcraftTranslations.GUI_CATEGORY_SPLIT.key());
 
+        //#if MC >= 12111
         CycleButton<SplitRule> rule = CycleButton.builder(SplitRule::displayName, currentRule())
             .withValues(SplitRule.values())
             .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_RULE.key()), (button, value) -> {
@@ -376,6 +430,16 @@ public final class TeamcraftConfigScreen extends Screen {
                 this.scrollOffset = 0;
                 rebuildWidgets();
             });
+        //#else
+        //$$ CycleButton<SplitRule> rule = CycleButton.builder(SplitRule::displayName)
+        //$$     .withValues(SplitRule.values())
+        //$$     .withInitialValue(currentRule())
+        //$$     .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_RULE.key()), (button, value) -> {
+        //$$         this.fixedTeamCount = value == SplitRule.TEAM_COUNT;
+        //$$         this.scrollOffset = 0;
+        //$$         rebuildWidgets();
+        //$$     });
+        //#endif
         addFullWidget(rule, tooltip(TeamcraftTranslations.GUI_OPTION_RULE.key()));
 
         if (this.fixedTeamCount) {
@@ -399,9 +463,16 @@ public final class TeamcraftConfigScreen extends Screen {
             );
         }
 
+        //#if MC >= 12111
         CycleButton<SplitMode> modeButton = CycleButton.builder(SplitMode::displayName, this.mode)
             .withValues(SplitMode.values())
             .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_MODE.key()), (button, value) -> this.mode = value);
+        //#else
+        //$$ CycleButton<SplitMode> modeButton = CycleButton.builder(SplitMode::displayName)
+        //$$     .withValues(SplitMode.values())
+        //$$     .withInitialValue(this.mode)
+        //$$     .create(Component.translatable(TeamcraftTranslations.GUI_OPTION_MODE.key()), (button, value) -> this.mode = value);
+        //#endif
         addFullWidget(modeButton, tooltip(TeamcraftTranslations.GUI_OPTION_MODE.key()));
 
         CycleButton<Boolean> friendlyFireButton = CycleButton.onOffBuilder(this.friendlyFire)
@@ -519,8 +590,8 @@ public final class TeamcraftConfigScreen extends Screen {
 
         Button color = colorDropdownButton(
             Component.translatable(TeamcraftTranslations.GUI_OWN_TEAM_COLOR.key()),
-            this.ownTeamColor,
-            value -> this.ownTeamColor = value
+            this.ownTeamcraftColor,
+            value -> this.ownTeamcraftColor = value
         );
         addFullWidget(color, tooltip(TeamcraftTranslations.GUI_OWN_TEAM_COLOR.key()));
 
@@ -558,7 +629,11 @@ public final class TeamcraftConfigScreen extends Screen {
                 String.join(", ", team.members())
             );
             Button teamRow = Button.builder(label, ignored ->
+                //#if MC >= 260200
                 this.minecraft.gui.setScreen(new TeamDetailsScreen(this, team))
+                //#else
+                //$$ this.minecraft.setScreen(new TeamDetailsScreen(this, team))
+                //#endif
             ).build();
             addFullWidget(teamRow, details);
         }
@@ -759,7 +834,7 @@ public final class TeamcraftConfigScreen extends Screen {
         if (!TeamcraftConfigClient.saveOwnTeam(
             this.ownTeam.id(),
             name,
-            this.ownTeamColor,
+            this.ownTeamcraftColor,
             this.ownTeamFriendlyFire
         )) {
             this.waitingForServer = false;
@@ -876,12 +951,12 @@ public final class TeamcraftConfigScreen extends Screen {
         this.teams = List.copyOf(teams);
         if (ownTeam != null) {
             this.ownTeamName = ownTeam.displayName().getString();
-            this.ownTeamColor = ownTeam.color();
+            this.ownTeamcraftColor = ownTeam.color();
             this.ownTeamFriendlyFire = ownTeam.friendlyFire();
         }
         else {
             this.ownTeamName = "";
-            this.ownTeamColor = TeamColor.WHITE;
+            this.ownTeamcraftColor = TeamcraftColor.WHITE;
             this.ownTeamFriendlyFire = false;
         }
     }
@@ -957,7 +1032,7 @@ public final class TeamcraftConfigScreen extends Screen {
         return textBox(key, TeamcraftTranslations.GUI_PLACEHOLDER_NUMBER.key(), value, 4, responder);
     }
 
-    private Button colorDropdownButton(Component label, TeamColor value, Consumer<TeamColor> onChanged) {
+    private Button colorDropdownButton(Component label, TeamcraftColor value, Consumer<TeamcraftColor> onChanged) {
         Component message = label.copy()
             .append(Component.literal(": ").withStyle(ChatFormatting.DARK_GRAY))
             .append(Msg.colorName(value).copy().withColor(value.textColor()))
@@ -965,11 +1040,11 @@ public final class TeamcraftConfigScreen extends Screen {
         return Button.builder(message, button -> openColorMenu(button, onChanged)).build();
     }
 
-    private void openColorMenu(AbstractWidget anchor, Consumer<TeamColor> onChanged) {
+    private void openColorMenu(AbstractWidget anchor, Consumer<TeamcraftColor> onChanged) {
         int rowHeight = 16;
         int availableHeight = this.contentBottom - this.contentTop;
-        int columns = availableHeight >= ((TeamColor.values().length + 1) / 2) * rowHeight ? 2 : 4;
-        int rows = (TeamColor.values().length + columns - 1) / columns;
+        int columns = availableHeight >= ((TeamcraftColor.values().length + 1) / 2) * rowHeight ? 2 : 4;
+        int rows = (TeamcraftColor.values().length + columns - 1) / columns;
         int width = columns == 2
             ? Math.min(Math.max(anchor.getWidth(), 220), contentWidth() - 8)
             : contentWidth() - 8;
@@ -1000,7 +1075,11 @@ public final class TeamcraftConfigScreen extends Screen {
         int maxLength,
         java.util.function.Consumer<String> responder
     ) {
+        //#if MC >= 260200
         EditBox box = new EditBox(this.font, Component.translatable(key));
+        //#else
+        //$$ EditBox box = new EditBox(this.font, 0, 0, 20, 20, Component.translatable(key));
+        //#endif
         box.setMaxLength(maxLength);
         box.setHint(Component.translatable(placeholderKey).withStyle(ChatFormatting.DARK_GRAY));
         box.setValue(value);
@@ -1035,8 +1114,10 @@ public final class TeamcraftConfigScreen extends Screen {
             if (y + HEADER_HEIGHT <= this.contentTop || y >= this.contentBottom) {
                 continue;
             }
-            graphics.text(this.font, header.text.copy().withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD),
-                this.contentLeft + 5, y + 6, 0xFFFFFFFF);
+            FormattedCharSequence headerText = header.text.copy()
+                .withStyle(ChatFormatting.AQUA, ChatFormatting.BOLD)
+                .getVisualOrderText();
+            graphics.text(this.font, headerText, this.contentLeft + 5, y + 6, 0xFFFFFFFF);
         }
 
         for (ContentRow row : this.contentRows) {
@@ -1073,7 +1154,11 @@ public final class TeamcraftConfigScreen extends Screen {
 
         for (PositionedWidget positioned : this.contentWidgets) {
             if (positioned.widget.visible) {
+                //#if MC >= 260102
                 positioned.widget.extractRenderState(graphics, mouseX, mouseY, partialTick);
+                //#else
+                //$$ positioned.widget.render(graphics, mouseX, mouseY, partialTick);
+                //#endif
             }
         }
     }
@@ -1096,7 +1181,7 @@ public final class TeamcraftConfigScreen extends Screen {
             return;
         }
         ColorMenu menu = this.colorMenu;
-        TeamColor[] colors = TeamColor.values();
+        TeamcraftColor[] colors = TeamcraftColor.values();
         int rows = (colors.length + menu.columns - 1) / menu.columns;
         int width = menu.columnWidth * menu.columns;
         int height = rows * menu.rowHeight;
@@ -1114,11 +1199,11 @@ public final class TeamcraftConfigScreen extends Screen {
             if (hovered) {
                 graphics.fill(x, y, x + menu.columnWidth, y + menu.rowHeight, 0xFF34414D);
             }
-            TeamColor color = colors[i];
+            TeamcraftColor color = colors[i];
             graphics.fill(x + 4, y + 5, x + 11, y + 12, 0xFF000000 | color.rgb());
             graphics.text(
                 this.font,
-                Msg.colorName(color).copy().withColor(color.textColor()),
+                Msg.colorName(color).copy().withColor(color.textColor()).getVisualOrderText(),
                 x + 15,
                 y + 5,
                 0xFFFFFFFF
@@ -1149,7 +1234,11 @@ public final class TeamcraftConfigScreen extends Screen {
 
     private void showOverlay(Component message, ChatFormatting color) {
         if (this.minecraft.player != null) {
+            //#if MC >= 260102
             this.minecraft.player.sendOverlayMessage(message.copy().withStyle(color));
+            //#else
+            //$$ this.minecraft.player.displayClientMessage(message.copy().withStyle(color), true);
+            //#endif
         }
     }
 
@@ -1236,10 +1325,10 @@ public final class TeamcraftConfigScreen extends Screen {
         int anchorY,
         int anchorWidth,
         int anchorHeight,
-        Consumer<TeamColor> onChanged
+        Consumer<TeamcraftColor> onChanged
     ) {
         private boolean contains(double mouseX, double mouseY) {
-            int rows = (TeamColor.values().length + this.columns - 1) / this.columns;
+            int rows = (TeamcraftColor.values().length + this.columns - 1) / this.columns;
             return mouseX >= this.x && mouseX < this.x + this.columnWidth * this.columns
                 && mouseY >= this.y && mouseY < this.y + this.rowHeight * rows;
         }

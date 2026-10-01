@@ -1,10 +1,10 @@
 package io.github.piscescup.fabricmc.teamcraft.gui;
 
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.TeamColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import java.util.Objects;
 public record TeamInfoData(
     String id,
     Component displayName,
-    TeamColor color,
+    TeamcraftColor color,
     boolean friendlyFire,
     List<String> members
 ) {
@@ -33,7 +33,7 @@ public record TeamInfoData(
         return new TeamInfoData(
             team.getName(),
             team.getDisplayName(),
-            team.getColor().orElse(TeamColor.WHITE),
+            TeamcraftColor.ofTeam(team),
             team.isAllowFriendlyFire(),
             List.copyOf(team.getPlayers())
         );
@@ -42,7 +42,7 @@ public record TeamInfoData(
     public void write(RegistryFriendlyByteBuf buffer) {
         buffer.writeUtf(this.id, MAX_TEAM_ID_LENGTH);
         ComponentSerialization.STREAM_CODEC.encode(buffer, this.displayName);
-        buffer.writeUtf(this.color.getSerializedName(), 32);
+        buffer.writeUtf(this.color.word(), 32);
         buffer.writeBoolean(this.friendlyFire);
         buffer.writeVarInt(this.members.size());
         for (String member : this.members) {
@@ -54,8 +54,8 @@ public record TeamInfoData(
         String id = buffer.readUtf(MAX_TEAM_ID_LENGTH);
         Component displayName = ComponentSerialization.STREAM_CODEC.decode(buffer);
         String colorName = buffer.readUtf(32);
-        TeamColor color = Objects.requireNonNull(
-            TeamColor.byName(colorName),
+        TeamcraftColor color = Objects.requireNonNull(
+            TeamcraftColor.byName(colorName),
             () -> "Unknown team color: " + colorName
         );
         boolean friendlyFire = buffer.readBoolean();

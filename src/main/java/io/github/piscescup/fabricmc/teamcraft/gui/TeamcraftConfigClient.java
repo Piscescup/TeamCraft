@@ -7,11 +7,16 @@ import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigSyncPayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.ConfigUpdatePayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.TeamDeletePayload;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.TeamUpdatePayload;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+//#if MC >= 260102
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+//#else
+//$$ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+//#endif
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -23,8 +28,12 @@ import java.util.List;
 /** Client-only entry points for opening and saving the configuration screen. */
 @Environment(EnvType.CLIENT)
 public final class TeamcraftConfigClient {
+    //#if MC >= 12110
     private static final KeyMapping.Category KEY_CATEGORY =
         KeyMapping.Category.register(References.fromPath("general"));
+    //#else
+    //$$ private static final String KEY_CATEGORY = "key.categories.teamcraft";
+    //#endif
 
     private static Screen pendingParent;
 
@@ -32,16 +41,28 @@ public final class TeamcraftConfigClient {
     }
 
     public static void register() {
+        //#if MC >= 260102
         KeyMapping openConfig = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+            //#else
+            //$$ KeyMapping openConfig = KeyBindingHelper.registerKeyBinding(new KeyMapping(
+            //#endif
             TeamcraftTranslations.KEY_TEAMCRAFT_OPEN_CONFIG.key(),
+            //#if MC >= 260300
+            //$$ InputConstants.Type.KEYBOARD,
+            //#else
             InputConstants.Type.KEYSYM,
+            //#endif
             InputConstants.KEY_BACKSPACE,
             KEY_CATEGORY
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openConfig.consumeClick()) {
+                //#if MC >= 260200
                 if (client.player != null && client.gui.screen() == null) {
+                    //#else
+                    //$$ if (client.player != null && client.screen == null) {
+                    //#endif
                     requestOpen(null);
                 }
             }
@@ -66,7 +87,11 @@ public final class TeamcraftConfigClient {
         pendingParent = parent;
         ClientPlayNetworking.send(ConfigRequestPayload.INSTANCE);
         if (client.player != null) {
+            //#if MC >= 260102
             client.player.sendOverlayMessage(Component.translatable(TeamcraftTranslations.GUI_LOADING.key()));
+            //#else
+            //$$ client.player.displayClientMessage(Component.translatable(TeamcraftTranslations.GUI_LOADING.key()), true);
+            //#endif
         }
     }
 
@@ -79,7 +104,7 @@ public final class TeamcraftConfigClient {
         return true;
     }
 
-    public static boolean saveOwnTeam(String teamId, String displayName, net.minecraft.world.scores.TeamColor color,
+    public static boolean saveOwnTeam(String teamId, String displayName, TeamcraftColor color,
                                       boolean friendlyFire) {
         if (!ClientPlayNetworking.canSend(TeamUpdatePayload.TYPE)) {
             notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
@@ -117,7 +142,11 @@ public final class TeamcraftConfigClient {
     }
 
     private static void handleSync(Minecraft client, ConfigSyncPayload payload) {
+        //#if MC >= 260200
         Screen current = client.gui.screen();
+        //#else
+        //$$ Screen current = client.screen;
+        //#endif
         if (current instanceof TeamcraftConfigScreen configScreen) {
             configScreen.handleServerResponse(payload);
             return;
@@ -128,6 +157,7 @@ public final class TeamcraftConfigClient {
         }
 
         if (payload.response() == ConfigSyncPayload.Response.OPENED) {
+            //#if MC >= 260200
             client.gui.setScreen(new TeamcraftConfigScreen(
                 pendingParent,
                 payload.config(),
@@ -136,6 +166,16 @@ public final class TeamcraftConfigClient {
                 payload.ownTeam(),
                 payload.teams()
             ));
+            //#else
+            //$$ client.setScreen(new TeamcraftConfigScreen(
+            //$$     pendingParent,
+            //$$     payload.config(),
+            //$$     payload.candidates(),
+            //$$     payload.onlinePlayers(),
+            //$$     payload.ownTeam(),
+            //$$     payload.teams()
+            //$$ ));
+            //#endif
             return;
         }
 
@@ -158,7 +198,11 @@ public final class TeamcraftConfigClient {
 
     private static void notifyPlayer(Minecraft client, String translationKey) {
         if (client.player != null) {
+            //#if MC >= 260102
             client.player.sendSystemMessage(Component.translatable(translationKey));
+            //#else
+            //$$ client.player.displayClientMessage(Component.translatable(translationKey), false);
+            //#endif
         }
     }
 }

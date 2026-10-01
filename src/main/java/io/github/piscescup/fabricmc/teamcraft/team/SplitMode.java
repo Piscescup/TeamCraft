@@ -5,7 +5,9 @@ import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.StringRepresentable;
+//#if MC >= 12111
 import org.jspecify.annotations.NonNull;
+//#endif
 
 /**
  * The strategy used to distribute candidates into teams.
@@ -56,7 +58,9 @@ public enum SplitMode implements StringRepresentable {
         });
     }
 
+    //#if MC >= 12111
     @NonNull
+    //#endif
     @Override
     public String getSerializedName() {
         return name;
