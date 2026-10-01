@@ -22,19 +22,25 @@ import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.TeamArgument;
+//#if MC >= 260200
 import net.minecraft.commands.arguments.TeamColorArgument;
+//#else
+//$$ import net.minecraft.commands.arguments.ColorArgument;
+//#endif
+import net.minecraft.commands.arguments.TeamArgument;
 import net.minecraft.commands.arguments.selector.EntitySelector;
 import net.minecraft.commands.arguments.selector.EntitySelectorParser;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.server.level.ServerPlayer;
+//#if MC >= 12111
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.permissions.Permissions;
+//#endif
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.TeamColor;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -141,7 +147,13 @@ public final class TeamcraftCommand
     public static final LiteralArgumentBuilder<CommandSourceStack> TEAM_MANAGE_COMMAND = Commands.literal("team-manage")
         .then( Commands.argument("team", TeamArgument.team())
             .then(Commands.literal("color")
-                .then(Commands.argument("color", TeamColorArgument.teamColor())
+                .then(Commands.argument("color",
+                    //#if MC >= 260200
+                    TeamColorArgument.teamColor()
+                    //#else
+                    //$$ ColorArgument.color()
+                    //#endif
+                )
                     .executes(TeamcraftCommand::teamColor))
             )
             .then(Commands.literal("name")
@@ -169,7 +181,11 @@ public final class TeamcraftCommand
         Commands.CommandSelection selection
     ) {
         dispatcher.register(Commands.literal("teamcraft")
+            //#if MC >= 12111
             .requires(Commands.hasPermission(Commands.LEVEL_ALL))
+            //#else
+            //$$ .requires(source -> source.hasPermission(0))
+            //#endif
             .executes(TeamcraftCommand::help)
             .then(Commands.literal("help").executes(TeamcraftCommand::help))
             .then(Commands.literal("status").executes(TeamcraftCommand::status))
@@ -228,7 +244,7 @@ public final class TeamcraftCommand
         report.append(Msg.row(TeamcraftTranslations.STATUS_FRIENDLY_FIRE.key(),
             Msg.tr(session.isFriendlyFire() ? TeamcraftTranslations.COMMON_ON.key() : TeamcraftTranslations.COMMON_OFF.key())));
 
-        List<TeamColor> palette = session.effectiveColors();
+        List<TeamcraftColor> palette = session.effectiveColors();
         MutableComponent colors = Msg.tr(session.getColors().isEmpty() ? TeamcraftTranslations.COMMON_DEFAULT.key() : TeamcraftTranslations.COMMON_CUSTOM.key())
             .append("  ")
             .append(Msg.joinedColors(palette));
@@ -380,7 +396,7 @@ public final class TeamcraftCommand
         if (raw.equalsIgnoreCase("reset")) {
             return configColorsReset(context);
         }
-        List<TeamColor> colors;
+        List<TeamcraftColor> colors;
         try {
             colors = parseColorList(raw);
         }
@@ -437,7 +453,7 @@ public final class TeamcraftCommand
     // ------------------------------------------------------------------
 
     private static int startColors(CommandContext<CommandSourceStack> context) {
-        List<TeamColor> colors;
+        List<TeamcraftColor> colors;
         try {
             colors = parseColorList(StringArgumentType.getString(context, "colors"));
         }
@@ -460,7 +476,7 @@ public final class TeamcraftCommand
         return start(context, null, names);
     }
 
-    private static int start(CommandContext<CommandSourceStack> context, List<TeamColor> colorOverride, List<String> nameOverride) {
+    private static int start(CommandContext<CommandSourceStack> context, List<TeamcraftColor> colorOverride, List<String> nameOverride) {
         CommandSourceStack source = context.getSource();
         TeamSession session = TeamSessionManager.get();
         List<String> candidates = session.getCandidates();
@@ -521,8 +537,12 @@ public final class TeamcraftCommand
             source.sendFailure(notManagedMessage(team));
             return 0;
         }
-        TeamColor color = TeamColorArgument.getTeamColor(context, "color");
-        team.setColor(Optional.of(color));
+        //#if MC >= 260200
+        TeamcraftColor color = TeamcraftColor.of(TeamColorArgument.getTeamColor(context, "color"));
+        //#else
+        //$$ TeamcraftColor color = TeamcraftColor.of(ColorArgument.getColor(context, "color"));
+        //#endif
+        color.applyTo(team);
         TeamAssigner.applyPrefix(team);
         source.sendSuccess(() -> Msg.success(TeamcraftTranslations.TEAM_COLOR.key(),
             team.getDisplayName().copy().withColor(color.textColor()), Msg.colorName(color)), false);
@@ -571,7 +591,7 @@ public final class TeamcraftCommand
         MutableComponent info = Msg.panel(TeamcraftTranslations.TITLE_TEAM_INFO.key())
             .append(Msg.row(TeamcraftTranslations.TEAM_INFO_ID.key(), Component.literal(team.getName())))
             .append(Msg.row(TeamcraftTranslations.TEAM_INFO_NAME.key(), team.getDisplayName()))
-            .append(Msg.row(TeamcraftTranslations.TEAM_INFO_COLOR.key(), Msg.colorName(team.getColor().orElse(TeamColor.WHITE))))
+            .append(Msg.row(TeamcraftTranslations.TEAM_INFO_COLOR.key(), Msg.colorName(TeamcraftColor.ofTeam(team))))
             .append(Msg.row(TeamcraftTranslations.TEAM_INFO_FRIENDLY_FIRE.key(),
                 Msg.tr(team.isAllowFriendlyFire() ? TeamcraftTranslations.COMMON_ON.key() : TeamcraftTranslations.COMMON_OFF.key())))
             .append(Msg.row(TeamcraftTranslations.TEAM_INFO_MEMBERS.key(), Msg.tr(TeamcraftTranslations.TEAM_INFO_MEMBERS_VALUE.key(),
@@ -619,12 +639,22 @@ public final class TeamcraftCommand
         CommandSourceStack source = context.getSource();
         if (input.startsWith("@")) {
             EntitySelector selector = new EntitySelectorParser(new StringReader(input), true).parse();
+            //#if MC >= 12111
+            // Entity selectors are elevated only while resolving TeamCraft's
+            // candidate-list arguments; every other permission stays intact.
             PermissionSet originalPermissions = source.permissions();
             PermissionSet selectorPermissions = permission ->
                 permission == Permissions.COMMANDS_ENTITY_SELECTORS
                     || originalPermissions.hasPermission(permission);
             for (ServerPlayer player : selector.findPlayers(source.withPermission(selectorPermissions))) {
+            //#else
+            //$$ for (ServerPlayer player : selector.findPlayers(source.withPermission(2))) {
+            //#endif
+                //#if MC >= 12110
                 names.add(player.getGameProfile().name());
+                //#else
+                //$$ names.add(player.getGameProfile().getName());
+                //#endif
             }
         }
         else {
@@ -634,7 +664,11 @@ public final class TeamcraftCommand
                 if (player == null) {
                     throw EntityArgument.NO_PLAYERS_FOUND.create();
                 }
+                //#if MC >= 12110
                 names.add(player.getGameProfile().name());
+                //#else
+                //$$ names.add(player.getGameProfile().getName());
+                //#endif
             }
         }
 
@@ -681,11 +715,11 @@ public final class TeamcraftCommand
         return ids;
     }
 
-    private static List<TeamColor> parseColorList(String input) {
-        List<TeamColor> colors = new ArrayList<>();
+    private static List<TeamcraftColor> parseColorList(String input) {
+        List<TeamcraftColor> colors = new ArrayList<>();
         List<String> invalid = new ArrayList<>();
         for (String word : input.trim().split("\\s+")) {
-            TeamColor color = Msg.parseColor(word);
+            TeamcraftColor color = Msg.parseColor(word);
             if (color == null) {
                 invalid.add(word);
             }

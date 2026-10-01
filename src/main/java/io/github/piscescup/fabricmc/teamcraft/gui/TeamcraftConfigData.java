@@ -2,8 +2,8 @@ package io.github.piscescup.fabricmc.teamcraft.gui;
 
 import io.github.piscescup.fabricmc.teamcraft.team.SplitMode;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
+import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.scores.TeamColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ public record TeamcraftConfigData(
     int teamCount,
     SplitMode mode,
     boolean friendlyFire,
-    List<TeamColor> colors,
+    List<TeamcraftColor> colors,
     List<String> names
 ) {
     public static final int MIN_PLAYERS_PER_TEAM = 1;
@@ -120,8 +120,8 @@ public record TeamcraftConfigData(
         buffer.writeBoolean(this.friendlyFire);
 
         buffer.writeVarInt(this.colors.size());
-        for (TeamColor color : this.colors) {
-            buffer.writeUtf(color.getSerializedName(), 32);
+        for (TeamcraftColor color : this.colors) {
+            buffer.writeUtf(color.word(), 32);
         }
 
         buffer.writeVarInt(this.names.size());
@@ -146,11 +146,11 @@ public record TeamcraftConfigData(
         boolean friendlyFire = buffer.readBoolean();
 
         int colorCount = readCollectionSize(buffer, "colors");
-        List<TeamColor> colors = new ArrayList<>(colorCount);
+        List<TeamcraftColor> colors = new ArrayList<>(colorCount);
         for (int i = 0; i < colorCount; i++) {
             String colorName = buffer.readUtf(32);
             colors.add(Objects.requireNonNull(
-                TeamColor.byName(colorName),
+                TeamcraftColor.byName(colorName),
                 () -> "Unknown team color: " + colorName
             ));
         }

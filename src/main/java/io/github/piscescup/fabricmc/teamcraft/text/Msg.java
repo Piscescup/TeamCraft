@@ -3,7 +3,6 @@ package io.github.piscescup.fabricmc.teamcraft.text;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.scores.TeamColor;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,12 +23,12 @@ import java.util.Map;
  */
 public final class Msg
 {
-    private static final Map<String, TeamColor> BY_WORD = new HashMap<>();
+    private static final Map<String, TeamcraftColor> BY_WORD = new HashMap<>();
     private static final Map<String, String> EN_US_FALLBACK_BY_KEY = new HashMap<>();
 
     static {
-        for (TeamColor color : TeamColor.values()) {
-            BY_WORD.put(color.getSerializedName().toLowerCase(Locale.ROOT), color);
+        for (TeamcraftColor color : TeamcraftColor.values()) {
+            BY_WORD.put(color.word().toLowerCase(Locale.ROOT), color);
         }
         for (TeamcraftTranslations translation : TeamcraftTranslations.values()) {
             EN_US_FALLBACK_BY_KEY.put(translation.key(), translation.enUsTranslation());
@@ -121,7 +120,7 @@ public final class Msg
     /**
      * Parses a color word accepted by the command line, e.g. {@code dark_blue}.
      */
-    public static TeamColor parseColor(String word) {
+    public static TeamcraftColor parseColor(String word) {
         return BY_WORD.get(word.trim().toLowerCase(Locale.ROOT));
     }
 
@@ -130,8 +129,8 @@ public final class Msg
      */
     public static List<String> validColorWords() {
         List<String> words = new ArrayList<>();
-        for (TeamColor color : TeamColor.values()) {
-            words.add(color.getSerializedName());
+        for (TeamcraftColor color : TeamcraftColor.values()) {
+            words.add(color.word());
         }
         return words;
     }
@@ -139,14 +138,14 @@ public final class Msg
     /**
      * Renders the command-line color token in its own color.
      */
-    public static MutableComponent colorWord(TeamColor color) {
-        return Component.literal(color.getSerializedName()).withColor(color.textColor());
+    public static MutableComponent colorWord(TeamcraftColor color) {
+        return Component.literal(color.word()).withColor(color.textColor());
     }
 
     /**
      * Renders the localized color name in its own color.
      */
-    public static MutableComponent colorName(TeamColor color) {
+    public static MutableComponent colorName(TeamcraftColor color) {
         TeamcraftTranslations translation = switch (color) {
             case BLACK -> TeamcraftTranslations.COLOR_BLACK;
             case DARK_BLUE -> TeamcraftTranslations.COLOR_DARK_BLUE;
@@ -187,10 +186,10 @@ public final class Msg
     /**
      * Joins colored command-line color tokens.
      */
-    public static MutableComponent joinedColors(Collection<TeamColor> colors) {
+    public static MutableComponent joinedColors(Collection<TeamcraftColor> colors) {
         MutableComponent result = Component.empty();
         int index = 0;
-        for (TeamColor color : colors) {
+        for (TeamcraftColor color : colors) {
             if (index++ > 0) {
                 result.append("  ");
             }
