@@ -19,6 +19,7 @@ public class Teamcraft
 
         TeamcraftConfigNetworking.register();
         CommandRegistrationCallback.EVENT.register(TeamcraftCommand::register);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> TeamSessionManager.reset());
+        ServerLifecycleEvents.SERVER_STARTED.register(TeamSessionManager::load);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> TeamSessionManager.unload());
     }
 }

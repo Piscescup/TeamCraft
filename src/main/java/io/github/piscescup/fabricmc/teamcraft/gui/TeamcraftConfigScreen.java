@@ -50,6 +50,7 @@ public final class TeamcraftConfigScreen extends Screen {
     private final List<ContentHeader> contentHeaders = new ArrayList<>();
     private final List<Button> navigationButtons = new ArrayList<>();
     private final List<AbstractWidget> idleOnlyWidgets = new ArrayList<>();
+    private final List<CandidateRow> candidateRows = new ArrayList<>();
 
     private Page page = Page.TEAM_CONFIG;
     private double scrollOffset;
@@ -84,6 +85,10 @@ public final class TeamcraftConfigScreen extends Screen {
     private boolean ownTeamFriendlyFire;
     private boolean waitingForServer;
     private ColorMenu colorMenu;
+    private String draggedCandidate;
+    private double candidateDragStartX;
+    private double candidateDragStartY;
+    private boolean candidateDragMoved;
 
     public TeamcraftConfigScreen(
         Screen parent,
@@ -109,6 +114,7 @@ public final class TeamcraftConfigScreen extends Screen {
         this.contentHeaders.clear();
         this.navigationButtons.clear();
         this.idleOnlyWidgets.clear();
+        this.candidateRows.clear();
         this.cursorY = 0;
 
         addNavigation();
@@ -174,7 +180,26 @@ public final class TeamcraftConfigScreen extends Screen {
         if (this.handleColorMenuClick(event.x(), event.y(), event.button())) {
             return true;
         }
+        if (this.handleCandidatePress(event.x(), event.y(), event.button())) {
+            return true;
+        }
         return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (this.handleCandidateDrag(event.x(), event.y(), event.button())) {
+            return true;
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (this.handleCandidateRelease(event.button())) {
+            return true;
+        }
+        return super.mouseReleased(event);
     }
     //#else
     //$$ @Override
@@ -182,9 +207,120 @@ public final class TeamcraftConfigScreen extends Screen {
     //$$     if (this.handleColorMenuClick(mouseX, mouseY, button)) {
     //$$         return true;
     //$$     }
+    //$$     if (this.handleCandidatePress(mouseX, mouseY, button)) {
+    //$$         return true;
+    //$$     }
     //$$     return super.mouseClicked(mouseX, mouseY, button);
     //$$ }
+    //$$
+    //$$ @Override
+    //$$ public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    //$$     if (this.handleCandidateDrag(mouseX, mouseY, button)) {
+    //$$         return true;
+    //$$     }
+    //$$     return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    //$$ }
+    //$$
+    //$$ @Override
+    //$$ public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    //$$     if (this.handleCandidateRelease(button)) {
+    //$$         return true;
+    //$$     }
+    //$$     return super.mouseReleased(mouseX, mouseY, button);
+    //$$ }
     //#endif
+
+    private boolean handleCandidatePress(double mouseX, double mouseY, int button) {
+        if (button != 0 || this.page != Page.TEAM_CONFIG || this.waitingForServer) {
+            return false;
+        }
+        CandidateRow row = candidateRowAt(mouseX, mouseY);
+        if (row == null) {
+            return false;
+        }
+        this.draggedCandidate = row.playerName;
+        this.candidateDragStartX = mouseX;
+        this.candidateDragStartY = mouseY;
+        this.candidateDragMoved = false;
+        return true;
+    }
+
+    private boolean handleCandidateDrag(double mouseX, double mouseY, int button) {
+        if (button != 0 || this.draggedCandidate == null) {
+            return false;
+        }
+        double deltaX = mouseX - this.candidateDragStartX;
+        double deltaY = mouseY - this.candidateDragStartY;
+        if (!this.candidateDragMoved && deltaX * deltaX + deltaY * deltaY < 9.0) {
+            return true;
+        }
+        this.candidateDragMoved = true;
+
+        if (mouseY < this.contentTop + 12 && this.scrollOffset > 0) {
+            this.scrollOffset -= 6;
+            clampScroll();
+            positionContentWidgets();
+        }
+        else if (mouseY > this.contentBottom - 12 && this.scrollOffset < maxScroll()) {
+            this.scrollOffset += 6;
+            clampScroll();
+            positionContentWidgets();
+        }
+
+        int targetIndex = nearestCandidateIndex(mouseY);
+        int currentIndex = this.candidates.indexOf(this.draggedCandidate);
+        if (targetIndex >= 0 && currentIndex >= 0 && targetIndex != currentIndex) {
+            String candidate = this.candidates.remove(currentIndex);
+            this.candidates.add(targetIndex, candidate);
+            rebuildWidgets();
+        }
+        return true;
+    }
+
+    private boolean handleCandidateRelease(int button) {
+        if (button != 0 || this.draggedCandidate == null) {
+            return false;
+        }
+        String candidate = this.draggedCandidate;
+        boolean moved = this.candidateDragMoved;
+        this.draggedCandidate = null;
+        this.candidateDragMoved = false;
+        if (!moved) {
+            this.candidates.remove(candidate);
+        }
+        rebuildWidgets();
+        return true;
+    }
+
+    private CandidateRow candidateRowAt(double mouseX, double mouseY) {
+        if (mouseX < this.contentLeft + 4 || mouseX >= this.contentRight - 4
+            || mouseY < this.contentTop || mouseY >= this.contentBottom) {
+            return null;
+        }
+        for (CandidateRow row : this.candidateRows) {
+            int y = this.contentTop + row.baseY - (int) this.scrollOffset;
+            if (y >= this.contentTop && y + ROW_HEIGHT <= this.contentBottom
+                && mouseY >= y && mouseY < y + ROW_HEIGHT) {
+                return row;
+            }
+        }
+        return null;
+    }
+
+    private int nearestCandidateIndex(double mouseY) {
+        int nearest = -1;
+        double nearestDistance = Double.MAX_VALUE;
+        for (int i = 0; i < this.candidateRows.size(); i++) {
+            CandidateRow row = this.candidateRows.get(i);
+            double centerY = this.contentTop + row.baseY - this.scrollOffset + ROW_HEIGHT / 2.0;
+            double distance = Math.abs(mouseY - centerY);
+            if (distance < nearestDistance) {
+                nearest = i;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
 
     /**
      * Handles one click against the open color menu.
@@ -398,7 +534,7 @@ public final class TeamcraftConfigScreen extends Screen {
         for (String playerName : displayedPlayers) {
             boolean selected = this.candidates.contains(playerName);
             boolean online = this.onlinePlayers.contains(playerName);
-            Component message = Component.literal(selected ? "☑ " : "☐ ")
+            Component message = Component.literal(selected ? "↕  ☑ " : "☐ ")
                 .append(Component.literal(playerName).withStyle(selected ? ChatFormatting.WHITE : ChatFormatting.GRAY))
                 .append(Component.literal("  •  ").withStyle(ChatFormatting.DARK_GRAY))
                 .append(Component.translatable(
@@ -414,6 +550,9 @@ public final class TeamcraftConfigScreen extends Screen {
                     rebuildWidgets();
                 }
             }).build();
+            if (selected) {
+                this.candidateRows.add(new CandidateRow(playerName, this.cursorY));
+            }
             addFullWidget(player, tooltip(
                 TeamcraftTranslations.GUI_CANDIDATES_PLAYER_TOOLTIP.key(),
                 TeamcraftTranslations.GUI_CANDIDATES_PLAYER_EXAMPLE.key()
@@ -944,6 +1083,8 @@ public final class TeamcraftConfigScreen extends Screen {
     private void loadCandidates(List<String> candidates, List<String> onlinePlayers) {
         this.candidates = new ArrayList<>(candidates);
         this.onlinePlayers = List.copyOf(onlinePlayers);
+        this.draggedCandidate = null;
+        this.candidateDragMoved = false;
     }
 
     private void loadTeams(TeamInfoData ownTeam, List<TeamInfoData> teams) {
@@ -1161,6 +1302,19 @@ public final class TeamcraftConfigScreen extends Screen {
                 //#endif
             }
         }
+
+        if (this.candidateDragMoved && this.draggedCandidate != null) {
+            for (CandidateRow row : this.candidateRows) {
+                if (!row.playerName.equals(this.draggedCandidate)) {
+                    continue;
+                }
+                int y = this.contentTop + row.baseY - (int) this.scrollOffset;
+                if (y + ROW_HEIGHT > this.contentTop && y < this.contentBottom) {
+                    graphics.fill(this.contentLeft + 1, y, this.contentLeft + 4, y + ROW_HEIGHT, 0xFFFFAA00);
+                }
+                break;
+            }
+        }
     }
 
     private void extractScrollbar(GuiGraphicsExtractor graphics) {
@@ -1310,6 +1464,9 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private record ContentHeader(int baseY, Component text) {
+    }
+
+    private record CandidateRow(String playerName, int baseY) {
     }
 
     private record FooterAction(String translationKey, Runnable run, boolean idleOnly) {
