@@ -8,9 +8,7 @@ import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Contract;
-//#if MC >= 12111
 import org.jspecify.annotations.NonNull;
-//#endif
 
 /**
  * The constant for the {@code Team Craft} mod.
@@ -35,9 +33,7 @@ public final class References {
     public static final Logger MOD_LOGGER = LogManager.getLogger(MOD_NAME);
 
     @Contract("_ -> new")
-    //#if MC >= 12111
     @NonNull
-    //#endif
     //#if MC >= 12111
     public static Identifier fromPath(String path) {
         return Identifier.fromNamespaceAndPath(MOD_ID, path);

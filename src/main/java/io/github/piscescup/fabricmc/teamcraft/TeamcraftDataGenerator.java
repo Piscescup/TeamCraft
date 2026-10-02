@@ -3,6 +3,7 @@ package io.github.piscescup.fabricmc.teamcraft;
 import io.github.piscescup.fabricmc.teamcraft.datagen.*;
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator;
+import org.jspecify.annotations.NonNull;
 
 
 /**
@@ -13,7 +14,7 @@ public class TeamcraftDataGenerator
 {
 
     @Override
-    public void onInitializeDataGenerator(FabricDataGenerator fabricDataGenerator) {
+    public void onInitializeDataGenerator(@NonNull FabricDataGenerator fabricDataGenerator) {
         FabricDataGenerator.Pack pack = fabricDataGenerator.createPack();
         pack.addProvider(ENUSLanguageProvider::new);
         pack.addProvider(ZHCNLanguageProvider::new);

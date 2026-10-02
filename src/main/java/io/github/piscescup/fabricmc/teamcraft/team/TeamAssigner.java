@@ -148,14 +148,26 @@ public final class TeamAssigner
 
     /**
      * Accepts both legacy ids ({@code teamcraft_1}) and readable ids
-     * ({@code Red_Team@teamcraft_1}).
+     * ({@code Red_Team<teamcraft_1>}).
      */
     public static boolean isManagedTeamId(String teamId) {
-        int separator = teamId.lastIndexOf('@');
-        String internalId = separator >= 0 ? teamId.substring(separator + 1) : teamId;
+        if (teamId == null || teamId.isEmpty()) {
+            return false;
+        }
+
+        String internalId;
+
+        int openBracket = teamId.lastIndexOf('<');
+
+        internalId = teamId.substring(openBracket + 1);
+        if (internalId.endsWith(">")) {
+            internalId = internalId.substring(0, internalId.length() - 1);
+        }
+
         if (!internalId.startsWith(TEAM_ID_PREFIX)) {
             return false;
         }
+
         String sequence = internalId.substring(TEAM_ID_PREFIX.length());
         return !sequence.isEmpty() && sequence.chars().allMatch(Character::isDigit);
     }

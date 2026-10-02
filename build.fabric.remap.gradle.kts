@@ -30,6 +30,7 @@ dependencies {
 
 	// Minecraft ships ICU4J at runtime; datagen uses its Chinese transliterator.
 	compileOnly("com.ibm.icu:icu4j:78.3")
+	compileOnly("org.jspecify:jspecify:1.0.0")
 }
 
 loom {

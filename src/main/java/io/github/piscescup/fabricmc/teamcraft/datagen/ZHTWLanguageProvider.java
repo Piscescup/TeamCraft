@@ -4,6 +4,7 @@ import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.core.HolderLookup;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -18,8 +19,8 @@ public final class ZHTWLanguageProvider extends FabricLanguageProvider {
 
     @Override
     public void generateTranslations(
-        HolderLookup.Provider registries,
-        TranslationBuilder builder
+        HolderLookup.@NonNull Provider registries,
+        @NonNull TranslationBuilder builder
     ) {
         for (TeamcraftTranslations translation : TeamcraftTranslations.values()) {
             builder.add(

@@ -2,9 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft.team;
 
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.network.chat.Component;
-//#if MC >= 12111
 import org.jspecify.annotations.NonNull;
-//#endif
 
 import java.util.List;
 
@@ -18,9 +16,7 @@ import java.util.List;
  */
 public record SplitPlan(String teamId, TeamcraftColor color, Component displayName, List<String> members) {
 
-    //#if MC >= 12111
     @NonNull
-    //#endif
     @Override
     public String toString() {
         return visualTeamString() + ":" + members;
@@ -29,9 +25,7 @@ public record SplitPlan(String teamId, TeamcraftColor color, Component displayNa
     /**
      * Returns the readable, command-safe scoreboard id.
      */
-    //#if MC >= 12111
     @NonNull
-    //#endif
     public String visualTeamString() {
         return (displayName.getString() + "<" + teamId + ">").replace(' ', '_');
     }
