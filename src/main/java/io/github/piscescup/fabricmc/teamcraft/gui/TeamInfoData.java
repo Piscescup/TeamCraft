@@ -18,12 +18,19 @@ public record TeamInfoData(
     boolean friendlyFire,
     List<String> members
 ) {
-    public static final int MAX_TEAM_ID_LENGTH = 64;
+    /**
+     * Includes the readable display-name prefix, the internal TeamCraft id and
+     * legacy ids accidentally produced from Component#toString().
+     */
+    public static final int MAX_TEAM_ID_LENGTH = 256;
     public static final int MAX_DISPLAY_NAME_LENGTH = 64;
     public static final int MAX_MEMBERS = 1024;
 
     public TeamInfoData {
         id = Objects.requireNonNull(id, "id");
+        if (id.length() > MAX_TEAM_ID_LENGTH) {
+            throw new IllegalArgumentException("Team id exceeds " + MAX_TEAM_ID_LENGTH + " characters");
+        }
         displayName = Objects.requireNonNull(displayName, "displayName");
         color = Objects.requireNonNull(color, "color");
         members = List.copyOf(members);
@@ -37,6 +44,10 @@ public record TeamInfoData(
             team.isAllowFriendlyFire(),
             List.copyOf(team.getPlayers())
         );
+    }
+
+    public static boolean canEncode(PlayerTeam team) {
+        return team.getName().length() <= MAX_TEAM_ID_LENGTH;
     }
 
     public void write(RegistryFriendlyByteBuf buffer) {

@@ -133,7 +133,7 @@ public final class TeamcraftSavedData extends SavedData {
         this.session = new TeamSession();
         this.session.getCandidates().addAll(new LinkedHashSet<>(candidates));
         this.session.getCreatedTeams().addAll(createdTeams.stream()
-            .filter(id -> id.startsWith(TeamAssigner.TEAM_ID_PREFIX))
+            .filter(TeamAssigner::isManagedTeamId)
             .distinct()
             .toList());
         this.session.setTeamSize(Math.max(1, teamSize));

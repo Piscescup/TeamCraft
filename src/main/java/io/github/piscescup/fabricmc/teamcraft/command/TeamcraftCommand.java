@@ -11,16 +11,13 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import io.github.piscescup.fabricmc.teamcraft.team.SplitMode;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner.SplitPlan;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
+import io.github.piscescup.fabricmc.teamcraft.team.*;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
 //#if MC >= 260200
 import net.minecraft.commands.arguments.TeamColorArgument;
@@ -146,6 +143,7 @@ public final class TeamcraftCommand
 
     public static final LiteralArgumentBuilder<CommandSourceStack> TEAM_MANAGE_COMMAND = Commands.literal("team-manage")
         .then( Commands.argument("team", TeamArgument.team())
+            .suggests(TeamcraftCommand::suggestManagedTeams)
             .then(Commands.literal("color")
                 .then(Commands.argument("color",
                     //#if MC >= 260200
@@ -500,7 +498,7 @@ public final class TeamcraftCommand
         TeamAssigner.apply(board, plans, session.isFriendlyFire());
         session.getCreatedTeams().clear();
         for (SplitPlan plan : plans) {
-            session.getCreatedTeams().add(plan.teamId());
+            session.getCreatedTeams().add(plan.visualTeamString());
         }
 
         MutableComponent summary = Msg.panel(TeamcraftTranslations.TITLE_SPLIT_RESULT.key())
@@ -698,7 +696,7 @@ public final class TeamcraftCommand
     }
 
     private static boolean isManaged(PlayerTeam team) {
-        return team.getName().startsWith(TeamAssigner.TEAM_ID_PREFIX);
+        return TeamAssigner.isManagedTeamId(team.getName());
     }
 
     private static Component notManagedMessage(PlayerTeam team) {
@@ -708,11 +706,21 @@ public final class TeamcraftCommand
     private static List<String> managedTeamIds(ServerScoreboard board) {
         List<String> ids = new ArrayList<>();
         for (String id : board.getTeamNames()) {
-            if (id.startsWith(TeamAssigner.TEAM_ID_PREFIX)) {
+            if (TeamAssigner.isManagedTeamId(id)) {
                 ids.add(id);
             }
         }
         return ids;
+    }
+
+    private static CompletableFuture<Suggestions> suggestManagedTeams(
+        CommandContext<CommandSourceStack> context,
+        SuggestionsBuilder builder
+    ) {
+        return SharedSuggestionProvider.suggest(
+            managedTeamIds(context.getSource().getServer().getScoreboard()),
+            builder
+        );
     }
 
     private static List<TeamcraftColor> parseColorList(String input) {

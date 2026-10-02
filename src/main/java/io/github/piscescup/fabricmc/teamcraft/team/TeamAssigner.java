@@ -1,5 +1,6 @@
 package io.github.piscescup.fabricmc.teamcraft.team;
 
+import io.github.piscescup.fabricmc.teamcraft.References;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
@@ -13,9 +14,9 @@ import java.util.List;
 
 /**
  * Computes a split plan from a {@link TeamSession} and applies it to (or removes
- * it from) the vanilla scoreboard. Teams created here always use the
- * {@link #TEAM_ID_PREFIX} prefix so they can be identified even after a server
- * restart.
+ * it from) the vanilla scoreboard. A created team's readable scoreboard id ends
+ * with an internal id using {@link #TEAM_ID_PREFIX}, so it can be identified
+ * even after a server restart.
  *
  * @author REN YuanTong
  * @since 1.0.0
@@ -25,22 +26,11 @@ public final class TeamAssigner
     /**
      * Prefix of every scoreboard team created by this mod.
      */
-    public static final String TEAM_ID_PREFIX = "teamcraft_";
+    public static final String TEAM_ID_PREFIX = References.MOD_ID + "_";
 
     private TeamAssigner() {
     }
 
-    /**
-     * One planned team: its scoreboard id, color, display name and members.
-     *
-     * @param teamId      the scoreboard team id, e.g. {@code teamcraft_1}
-     * @param color       the team color
-     * @param displayName the user-visible team name
-     * @param members     the usernames assigned to this team
-     */
-    public record SplitPlan(String teamId, TeamcraftColor color, Component displayName, List<String> members)
-    {
-    }
 
     /**
      * Builds the split plan without touching the scoreboard.
@@ -84,7 +74,7 @@ public final class TeamAssigner
      */
     public static void apply(ServerScoreboard board, List<SplitPlan> plans, boolean friendlyFire) {
         for (SplitPlan plan : plans) {
-            PlayerTeam team = board.addPlayerTeam(plan.teamId());
+            PlayerTeam team = board.addPlayerTeam(plan.visualTeamString());
             plan.color().applyTo(team);
             team.setDisplayName(plan.displayName());
             team.setAllowFriendlyFire(friendlyFire);
@@ -138,7 +128,7 @@ public final class TeamAssigner
      */
     public static boolean disband(ServerScoreboard board, String teamId) {
         PlayerTeam team = board.getPlayerTeam(teamId);
-        if (team == null || !team.getName().startsWith(TEAM_ID_PREFIX)) {
+        if (team == null || !isManagedTeamId(team.getName())) {
             return false;
         }
         for (String member : List.copyOf(team.getPlayers())) {
@@ -156,10 +146,24 @@ public final class TeamAssigner
         return !managedTeamIds(board).isEmpty();
     }
 
+    /**
+     * Accepts both legacy ids ({@code teamcraft_1}) and readable ids
+     * ({@code Red_Team@teamcraft_1}).
+     */
+    public static boolean isManagedTeamId(String teamId) {
+        int separator = teamId.lastIndexOf('@');
+        String internalId = separator >= 0 ? teamId.substring(separator + 1) : teamId;
+        if (!internalId.startsWith(TEAM_ID_PREFIX)) {
+            return false;
+        }
+        String sequence = internalId.substring(TEAM_ID_PREFIX.length());
+        return !sequence.isEmpty() && sequence.chars().allMatch(Character::isDigit);
+    }
+
     private static List<String> managedTeamIds(ServerScoreboard board) {
         List<String> ids = new ArrayList<>();
         for (String id : board.getTeamNames()) {
-            if (id.startsWith(TEAM_ID_PREFIX)) {
+            if (isManagedTeamId(id)) {
                 ids.add(id);
             }
         }

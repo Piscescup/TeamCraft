@@ -2,8 +2,8 @@ package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigData;
 import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.team.SplitPlan;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner.SplitPlan;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
@@ -18,7 +18,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.scores.PlayerTeam;
 //#if MC >= 12111
+//#if MC >= 12111
 import org.jspecify.annotations.NonNull;
+//#endif
 //#endif
 
 import java.util.Comparator;
@@ -89,7 +91,7 @@ public final class TeamcraftConfigNetworking {
             ServerScoreboard board = context.server().getScoreboard();
             PlayerTeam team = board.getPlayersTeam(player.getScoreboardName());
             if (team == null
-                || !team.getName().startsWith(TeamAssigner.TEAM_ID_PREFIX)
+                || !TeamAssigner.isManagedTeamId(team.getName())
                 || !team.getName().equals(payload.teamId())) {
                 send(player, ConfigSyncPayload.Response.TEAM_NOT_FOUND);
                 return;
@@ -151,7 +153,7 @@ public final class TeamcraftConfigNetworking {
         List<SplitPlan> plans = TeamAssigner.buildPlan(session, null, null);
         TeamAssigner.apply(board, plans, session.isFriendlyFire());
         session.getCreatedTeams().clear();
-        plans.stream().map(SplitPlan::teamId).forEach(session.getCreatedTeams()::add);
+        plans.stream().map(SplitPlan::visualTeamString).forEach(session.getCreatedTeams()::add);
 
         PlayerList playerList = server.getPlayerList();
         for (SplitPlan plan : plans) {
@@ -169,7 +171,12 @@ public final class TeamcraftConfigNetworking {
     }
 
     //#if MC >= 12111
-    private static boolean hasConfigPermission(@NonNull ServerPlayer player) {
+    private static boolean hasConfigPermission(
+        //#if MC >= 12111
+        @NonNull
+        //#endif
+        ServerPlayer player
+    ) {
         // Keep the GUI permission identical to the existing /teamcraft command root.
         return Commands.hasPermission(Commands.LEVEL_ALL).test(player.createCommandSourceStack());
     }
@@ -190,13 +197,16 @@ public final class TeamcraftConfigNetworking {
         ServerScoreboard board = player.createCommandSourceStack().getServer().getScoreboard();
         TeamSession session = TeamSessionManager.get();
         List<TeamInfoData> teams = board.getPlayerTeams().stream()
-            .filter(team -> team.getName().startsWith(TeamAssigner.TEAM_ID_PREFIX))
+            .filter(team -> TeamAssigner.isManagedTeamId(team.getName()))
+            .filter(TeamInfoData::canEncode)
             .sorted(Comparator.comparing(PlayerTeam::getName))
             .map(TeamInfoData::fromTeam)
             .toList();
 
         PlayerTeam own = board.getPlayersTeam(player.getScoreboardName());
-        TeamInfoData ownTeam = own != null && own.getName().startsWith(TeamAssigner.TEAM_ID_PREFIX)
+        TeamInfoData ownTeam = own != null
+            && TeamAssigner.isManagedTeamId(own.getName())
+            && TeamInfoData.canEncode(own)
             ? TeamInfoData.fromTeam(own)
             : null;
 

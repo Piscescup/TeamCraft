@@ -16,6 +16,7 @@ val modVersion = projectProperty("mod_version")
 val modLoader = projectProperty("mod_loader")
 val mavenGroup = projectProperty("maven_group")
 val archivesBaseName = projectProperty("archives_base_name")
+val testClientCount = providers.gradleProperty("test_client_count").get().toInt()
 
 configurations.configureEach {
 	resolutionStrategy.force("net.fabricmc:fabric-loader:$loaderVersion")
@@ -33,7 +34,6 @@ dependencies {
 
 loom {
 	runs {
-		val testClientCount = providers.gradleProperty("test_client_count").get().toInt()
 		for (i in 1..testClientCount) {
 			create("testClient$i") {
 				client()
@@ -44,6 +44,45 @@ loom {
 				programArgs("--username", "DevPlayer$i")
 			}
 		}
+	}
+}
+
+// IntelliJ replaces dots in Gradle subproject names with underscores when it
+// creates module names, while Loom 1.15 keeps the dots in generated run
+// configurations. Repair that mismatch and generate one compound launcher per
+// Minecraft version after every IDEA sync.
+tasks.named("ideaSyncTask") {
+	outputs.upToDateWhen { false }
+	doLast {
+		val runConfigurations = rootProject.file(".idea/runConfigurations")
+		runConfigurations.mkdirs()
+
+		val loomModuleName = "${rootProject.name}.${project.name}.main"
+		val ideaModuleName = "${rootProject.name}.${project.name.replace('.', '_')}.main"
+		runConfigurations.listFiles { file -> file.extension == "xml" }?.forEach { file ->
+			val original = file.readText()
+			val repaired = original.replace(
+				"<module name=\"$loomModuleName\"/>",
+				"<module name=\"$ideaModuleName\"/>"
+			)
+			if (repaired != original) {
+				file.writeText(repaired)
+			}
+		}
+
+		val compoundName = "Minecraft Test Clients (${project.path})"
+		val compoundXml = buildString {
+			appendLine("<component name=\"ProjectRunConfigurationManager\">")
+			appendLine("  <configuration default=\"false\" name=\"$compoundName\" type=\"CompoundRunConfigurationType\">")
+			for (i in 1..testClientCount) {
+				appendLine("    <toRun name=\"Minecraft Test Client$i (${project.path})\" type=\"Application\" />")
+			}
+			appendLine("    <method v=\"2\" />")
+			appendLine("  </configuration>")
+			appendLine("</component>")
+		}
+		val safeProjectName = project.name.replace('.', '_')
+		runConfigurations.resolve("Minecraft_Test_Clients_$safeProjectName.xml").writeText(compoundXml)
 	}
 }
 
