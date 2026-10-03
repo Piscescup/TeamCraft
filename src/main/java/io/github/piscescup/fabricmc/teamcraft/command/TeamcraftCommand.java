@@ -11,6 +11,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.piscescup.fabricmc.teamcraft.permission.TeamPermissionManager;
+import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
+import io.github.piscescup.fabricmc.teamcraft.permission.Permission;
 import io.github.piscescup.fabricmc.teamcraft.team.*;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
@@ -44,6 +47,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.*;
+
 /**
  * The {@code /teamcraft} command tree: pick candidates ({@code init}), configure
  * the split ({@code config}), create the teams ({@code start}), adjust them
@@ -61,7 +66,31 @@ public final class TeamcraftCommand
      */
     private static final Pattern NAME_TOKEN = Pattern.compile("\"([^\"]*)\"|(\\S+)");
 
+    public static final LiteralArgumentBuilder<CommandSourceStack> ROOT_COMMAND = Commands.literal("teamcraft")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(ROOT_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(ROOT_KEY).toPermission()))
+        //#endif
+        .executes(TeamcraftCommand::help);
+
+    public static final LiteralArgumentBuilder<CommandSourceStack> HELP_COMMAND = Commands.literal("help")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(HELP_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(HELP_KEY).toPermission()))
+        //#endif
+        .executes(TeamcraftCommand::help);
+
     public static final LiteralArgumentBuilder<CommandSourceStack> INIT_COMMAND = Commands.literal("init")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(INIT_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(INIT_KEY).toPermission()))
+        //#endif
         .then( Commands.argument("players", StringArgumentType.greedyString())
             .suggests(TeamcraftCommand::suggestPlayers)
             .executes(TeamcraftCommand::initSet)
@@ -84,6 +113,12 @@ public final class TeamcraftCommand
         );
 
     public static final LiteralArgumentBuilder<CommandSourceStack> CONFIG_COMMANDS = Commands.literal("config")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(CONFIG_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(CONFIG_KEY).toPermission()))
+        //#endif
         .then(Commands.literal("players-per-team")
             .then(Commands.argument("players", IntegerArgumentType.integer(1, 1000))
                 .executes(TeamcraftCommand::configPlayersPerTeam))
@@ -130,6 +165,12 @@ public final class TeamcraftCommand
         );
 
     public static final LiteralArgumentBuilder<CommandSourceStack> BUILD_COMMAND = Commands.literal("build-teams")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(BUILD_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(BUILD_KEY).toPermission()))
+        //#endif
         .executes(ctx -> start(ctx, null, null))
         .then( Commands.literal("colors")
             .then(Commands.argument("colors", StringArgumentType.greedyString())
@@ -141,7 +182,22 @@ public final class TeamcraftCommand
                 .executes(TeamcraftCommand::startNames))
         );
 
+    public static final LiteralArgumentBuilder<CommandSourceStack> STATUS_COMMAND = Commands.literal("status")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(STATUS_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(STATUS_KEY).toPermission()))
+        //#endif
+        .executes(TeamcraftCommand::status);
+
     public static final LiteralArgumentBuilder<CommandSourceStack> TEAM_MANAGE_COMMAND = Commands.literal("team-manage")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(MANAGE_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(MANAGE_KEY).toPermission()))
+        //#endif
         .then( Commands.argument("team", TeamArgument.team())
             .suggests(TeamcraftCommand::suggestManagedTeams)
             .then(Commands.literal("color")
@@ -167,6 +223,27 @@ public final class TeamcraftCommand
             )
         );
 
+    public static final LiteralArgumentBuilder<CommandSourceStack> CLEAR_COMMAND = Commands.literal("clear")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(CLEAR_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(CLEAR_KEY).toPermission()))
+        //#endif
+        .executes(TeamcraftCommand::clearTeams);
+
+    public static final LiteralArgumentBuilder<CommandSourceStack> RESET_COMMAND = Commands.literal("reset")
+        //#if MC >= 12111
+        .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(RESET_KEY).toPermission())
+            .test(source))
+        //#else
+        //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(RESET_KEY).toPermission()))
+        //#endif
+        .executes(TeamcraftCommand::resetAll);
+
+
+
+
     private TeamcraftCommand() {
     }
 
@@ -178,21 +255,24 @@ public final class TeamcraftCommand
         CommandBuildContext context,
         Commands.CommandSelection selection
     ) {
-        dispatcher.register(Commands.literal("teamcraft")
-            //#if MC >= 12111
-            .requires(Commands.hasPermission(Commands.LEVEL_ALL))
-            //#else
-            //$$ .requires(source -> source.hasPermission(0))
-            //#endif
-            .executes(TeamcraftCommand::help)
-            .then(Commands.literal("help").executes(TeamcraftCommand::help))
-            .then(Commands.literal("status").executes(TeamcraftCommand::status))
+        LiteralArgumentBuilder<CommandSourceStack> PERMISSION_COMMAND = Commands.literal("permission");
+
+
+        KEYS.stream()
+            .map(TeamcraftCommand::permissionFor)
+            .forEach(PERMISSION_COMMAND::then);
+
+        dispatcher.register(ROOT_COMMAND
+            .then(HELP_COMMAND)
+            .then(STATUS_COMMAND)
             .then(INIT_COMMAND)
             .then(CONFIG_COMMANDS)
             .then(BUILD_COMMAND)
             .then(TEAM_MANAGE_COMMAND)
-            .then(Commands.literal("clear").executes(TeamcraftCommand::clearTeams))
-            .then(Commands.literal("reset").executes(TeamcraftCommand::resetAll)));
+            .then(CLEAR_COMMAND)
+            .then(RESET_COMMAND)
+            .then(PERMISSION_COMMAND)
+        );
     }
 
     // ------------------------------------------------------------------
@@ -770,6 +850,48 @@ public final class TeamcraftCommand
             }
         }
         return builder.buildFuture();
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> permissionFor(String permissionKey) {
+        return Commands.literal(permissionKey)
+            .then(Commands.literal("get")
+                .executes(context -> {
+                    CommandSourceStack source = context.getSource();
+                    Permission permission = TeamPermissionManager.getPermission(permissionKey);
+                    source.sendSuccess(() -> Msg.success(TeamcraftTranslations.PERMISSION_GET.key(),
+                        permissionKey, permission.getSerializedName()), true);
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+            .then(Commands.literal("set")
+                //#if MC >= 12111
+                .requires(source -> Commands.hasPermission(TeamPermissionManager.getPermission(PERMISSION_KEY).toPermission())
+                    .test(source))
+                //#else
+                //$$ .requires(source -> source.hasPermission(TeamPermissionManager.getPermission(PERMISSION_KEY).toPermission()))
+                //#endif
+                .then(Commands.argument("level", StringArgumentType.word())
+                    .suggests((context, builder) -> {
+                        for (Permission level : Permission.values()) {
+                            builder.suggest(level.getSerializedName());
+                        }
+                        return builder.buildFuture();
+                    })
+                    .executes(context -> {
+                        CommandSourceStack source = context.getSource();
+                        String levelStr = StringArgumentType.getString(context, "level");
+                        Permission level = Permission.fromName(levelStr);
+                        TeamPermissionManager.updatePermission(permissionKey, level);
+                        source.getServer().getPlayerList().getPlayers().forEach(
+                            player -> source.getServer().getCommands().sendCommands(player)
+                        );
+                        source.sendSuccess(() -> Msg.success(TeamcraftTranslations.PERMISSION_SET.resolve(permissionKey),
+                            permissionKey, level.getSerializedName()), true
+                        );
+                        return Command.SINGLE_SUCCESS;
+                    })
+                )
+            );
     }
 
     /**

@@ -2,7 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft;
 
 import io.github.piscescup.fabricmc.teamcraft.command.TeamcraftCommand;
 import io.github.piscescup.fabricmc.teamcraft.gui.network.TeamcraftConfigNetworking;
-import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
+import io.github.piscescup.fabricmc.teamcraft.io.TeamcraftLifecycle;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -19,7 +19,7 @@ public class Teamcraft
 
         TeamcraftConfigNetworking.register();
         CommandRegistrationCallback.EVENT.register(TeamcraftCommand::register);
-        ServerLifecycleEvents.SERVER_STARTED.register(TeamSessionManager::load);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> TeamSessionManager.unload());
+        ServerLifecycleEvents.SERVER_STARTED.register(TeamcraftLifecycle::load);
+        ServerLifecycleEvents.SERVER_STOPPED.register(TeamcraftLifecycle::unload);
     }
 }

@@ -39,7 +39,19 @@ preprocess {
 	}
 }
 
+// The main version owns the datagen output consumed by the other versions.
+val mainProjectName = file("versions/mainProject").readText().trim()
+val mainDatagenTaskPath = ":$mainProjectName:runDatagen"
+
 subprojects {
+	if (name != mainProjectName) {
+		tasks.matching { it.name == "preprocessResources" }.configureEach {
+			// Order explicitly requested datagen before reading its output.
+			// Keep ordinary builds from automatically launching datagen.
+			mustRunAfter(mainDatagenTaskPath)
+		}
+	}
+
 	tasks.withType<Jar>().configureEach {
 		if (name == "sourcesJar") {
 			tasks.findByName("preprocessResources")?.let {

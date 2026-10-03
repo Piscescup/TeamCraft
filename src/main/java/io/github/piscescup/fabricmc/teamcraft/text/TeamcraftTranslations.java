@@ -217,8 +217,8 @@ public enum TeamcraftTranslations {
     ),
     GUI_ERROR_PERMISSION(
         "teamcraft.gui.error.permission",
-        "你没有修改 TeamCraft 设置的权限",
-        "You do not have permission to edit TeamCraft settings"
+        "权限不足，无法执行此 TeamCraft 操作",
+        "You do not have permission to perform this TeamCraft action"
     ),
     GUI_ERROR_PLAYERS_PER_TEAM(
         "teamcraft.gui.error.players_per_team",
@@ -668,7 +668,10 @@ public enum TeamcraftTranslations {
     TITLE_HELP("teamcraft.title.help", "命令指南", "Command Guide"),
     TITLE_SPLIT_RESULT("teamcraft.title.split_result", "分队完成", "Split Complete"),
     TITLE_STATUS("teamcraft.title.status", "当前状态", "Current Status"),
-    TITLE_TEAM_INFO("teamcraft.title.team_info", "队伍详情", "Team Details");
+    TITLE_TEAM_INFO("teamcraft.title.team_info", "队伍详情", "Team Details"),
+    PERMISSION_GET("teamcraft.permission.get", "当前 %1$s 权限：%2$s", "The current %1$s permission is %2$s"),
+    PERMISSION_SET("teamcraft.permission.set", "已将 %1$s 权限设置为 %2$s", "Set the %1$s permission to %2$s")
+    ;
 
     private final String key;
     private final String zhCnTranslation;
@@ -678,6 +681,10 @@ public enum TeamcraftTranslations {
         this.key = key;
         this.zhCnTranslation = zhCnTranslation;
         this.enUsTranslation = enUsTranslation;
+    }
+
+    public String resolve(String suffix) {
+        return this.key + "." + suffix;
     }
 
     public String key() {

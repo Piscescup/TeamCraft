@@ -44,7 +44,7 @@ public final class TeamSessionManager
     /**
      * Releases references to a stopped server without modifying its saved data.
      */
-    public static synchronized void unload() {
+    public static synchronized void unload(MinecraftServer server) {
         savedData = null;
         session = new TeamSession();
     }
