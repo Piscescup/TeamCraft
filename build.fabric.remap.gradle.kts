@@ -9,6 +9,7 @@ plugins {
 
 fun projectProperty(name: String) = property(name).toString()
 
+val modmenu_version = projectProperty("modmenu_version")
 val minecraftVersion = projectProperty("minecraft_version")
 val loaderVersion = projectProperty("loader_version")
 val fabricApiVersion = projectProperty("fabric_api_version")
@@ -27,6 +28,7 @@ dependencies {
 	mappings(loom.officialMojangMappings())
 	modImplementation("net.fabricmc:fabric-loader:$loaderVersion")
 	modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+	modImplementation("com.terraformersmc:modmenu:${modmenu_version}")
 
 	// Minecraft ships ICU4J at runtime; datagen uses its Chinese transliterator.
 	compileOnly("com.ibm.icu:icu4j:78.3")

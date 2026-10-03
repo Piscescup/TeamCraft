@@ -5,6 +5,9 @@ import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.ServerScoreboard;
 import net.minecraft.world.scores.PlayerTeam;
 
@@ -93,10 +96,50 @@ public final class TeamAssigner
      */
     public static void applyPrefix(PlayerTeam team) {
         TeamcraftColor color = TeamcraftColor.ofTeam(team);
+        Component displayName = removeLegacyAutoNameColor(team.getDisplayName());
+        if (displayName != team.getDisplayName()) {
+            team.setDisplayName(displayName);
+        }
         team.setPlayerPrefix(Component.literal("[")
-            .append(team.getDisplayName())
+            .append(displayName)
             .append("] ")
             .withColor(color.textColor()));
+    }
+
+    /**
+     * Repairs automatic names created by older builds, where the translated
+     * color word carried its original color forever. The text and translation
+     * key stay unchanged; only the embedded color override is removed.
+     */
+    private static Component removeLegacyAutoNameColor(Component displayName) {
+        if (!(displayName.getContents() instanceof TranslatableContents contents)
+            || !TeamcraftTranslations.TEAM_AUTO_NAME.key().equals(contents.getKey())) {
+            return displayName;
+        }
+
+        Object[] arguments = contents.getArgs().clone();
+        boolean changed = false;
+        for (int index = 0; index < arguments.length; index++) {
+            if (arguments[index] instanceof Component argument && argument.getStyle().getColor() != null) {
+                arguments[index] = argument.copy().setStyle(
+                    argument.getStyle().withColor((TextColor) null)
+                );
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return displayName;
+        }
+
+        MutableComponent repaired = Component.translatableWithFallback(
+            contents.getKey(),
+            contents.getFallback(),
+            arguments
+        ).setStyle(displayName.getStyle());
+        for (Component sibling : displayName.getSiblings()) {
+            repaired.append(sibling.copy());
+        }
+        return repaired;
     }
 
     /**
@@ -157,12 +200,9 @@ public final class TeamAssigner
 
         String internalId;
 
-        int openBracket = teamId.lastIndexOf('<');
+        int openBracket = teamId.lastIndexOf('-');
 
         internalId = teamId.substring(openBracket + 1);
-        if (internalId.endsWith(">")) {
-            internalId = internalId.substring(0, internalId.length() - 1);
-        }
 
         if (!internalId.startsWith(TEAM_ID_PREFIX)) {
             return false;
@@ -186,6 +226,6 @@ public final class TeamAssigner
         if (index < names.size()) {
             return Component.literal(names.get(index));
         }
-        return Msg.tr(TeamcraftTranslations.TEAM_AUTO_NAME.key(), Msg.colorName(color));
+        return Msg.tr(TeamcraftTranslations.TEAM_AUTO_NAME.key(), Msg.plainColorName(color));
     }
 }

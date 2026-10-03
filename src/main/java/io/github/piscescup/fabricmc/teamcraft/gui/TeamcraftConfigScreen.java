@@ -43,6 +43,7 @@ public final class TeamcraftConfigScreen extends Screen {
     private static final int WIDGET_HEIGHT = 20;
 
     private final Screen parent;
+    private final boolean helpOnly;
     private final List<PositionedWidget> contentWidgets = new ArrayList<>();
     private final List<ContentRow> contentRows = new ArrayList<>();
     private final List<ContentHeader> contentHeaders = new ArrayList<>();
@@ -96,11 +97,42 @@ public final class TeamcraftConfigScreen extends Screen {
         TeamInfoData ownTeam,
         List<TeamInfoData> teams
     ) {
-        super(Component.translatable(TeamcraftTranslations.GUI_TITLE.key()));
+        this(parent, config, candidates, onlinePlayers, ownTeam, teams, false);
+    }
+
+    private TeamcraftConfigScreen(
+        Screen parent,
+        TeamcraftConfigData config,
+        List<String> candidates,
+        List<String> onlinePlayers,
+        TeamInfoData ownTeam,
+        List<TeamInfoData> teams,
+        boolean helpOnly
+    ) {
+        super(Component.translatable(
+            helpOnly ? TeamcraftTranslations.TITLE_HELP.key() : TeamcraftTranslations.GUI_TITLE.key()
+        ));
         this.parent = parent;
+        this.helpOnly = helpOnly;
         loadConfig(config);
         loadCandidates(candidates, onlinePlayers);
         loadTeams(ownTeam, teams);
+        if (helpOnly) {
+            this.page = TeamcraftConfigPage.HELP;
+        }
+    }
+
+    /** Creates a server-independent, read-only Help view for Mod Menu. */
+    public static TeamcraftConfigScreen help(Screen parent) {
+        return new TeamcraftConfigScreen(
+            parent,
+            TeamcraftConfigData.defaults(),
+            List.of(),
+            List.of(),
+            null,
+            List.of(),
+            true
+        );
     }
 
     @Override
@@ -341,9 +373,7 @@ public final class TeamcraftConfigScreen extends Screen {
                     return true;
                 }
             }
-            if (menu.anchorContains(x, y)) {
-                return true;
-            }
+            return menu.anchorContains(x, y);
         }
         return false;
     }
@@ -382,7 +412,7 @@ public final class TeamcraftConfigScreen extends Screen {
     //#if MC >= 12110
     @Override
     public boolean isInGameUi() {
-        return true;
+        return !this.helpOnly;
     }
     //#endif
 
@@ -396,7 +426,7 @@ public final class TeamcraftConfigScreen extends Screen {
         this.panelTop = (this.height - panelHeight) / 2;
         this.panelRight = this.panelLeft + panelWidth;
         this.panelBottom = this.panelTop + panelHeight;
-        this.navigationWidth = Math.max(94, Math.min(142, panelWidth / 4));
+        this.navigationWidth = Math.clamp(panelWidth / 4, 94, 142);
         this.contentLeft = this.panelLeft + this.navigationWidth + 10;
         this.contentRight = this.panelRight - 10;
         this.contentTop = this.panelTop + 42;
@@ -407,7 +437,10 @@ public final class TeamcraftConfigScreen extends Screen {
         int x = this.panelLeft + 8;
         int y = this.panelTop + 43;
         int width = this.navigationWidth - 16;
-        for (TeamcraftConfigPage candidate : TeamcraftConfigPage.values()) {
+        TeamcraftConfigPage[] pages = this.helpOnly
+            ? new TeamcraftConfigPage[]{TeamcraftConfigPage.HELP}
+            : TeamcraftConfigPage.values();
+        for (TeamcraftConfigPage candidate : pages) {
             Component label = candidate == this.page
                 ? Component.literal("▶ ").append(candidate.displayName()).withStyle(ChatFormatting.AQUA)
                 : candidate.displayName();
@@ -608,10 +641,10 @@ public final class TeamcraftConfigScreen extends Screen {
         int columns = availableHeight >= ((TeamcraftColor.values().length + 1) / 2) * rowHeight ? 2 : 4;
         int rows = (TeamcraftColor.values().length + columns - 1) / columns;
         int width = columns == 2
-            ? Math.min(Math.max(anchor.getWidth(), 220), contentWidth() - 8)
+            ? Math.clamp(anchor.getWidth(), 220, contentWidth() - 8)
             : contentWidth() - 8;
         int height = rows * rowHeight;
-        int x = Math.max(this.contentLeft + 4, Math.min(anchor.getX(), this.contentRight - width - 4));
+        int x = Math.clamp(anchor.getX(), this.contentLeft + 4, this.contentRight - width - 4);
         int below = anchor.getBottom() + 1;
         int y = below + height <= this.contentBottom
             ? below
@@ -704,7 +737,7 @@ public final class TeamcraftConfigScreen extends Screen {
                 }
             }
             if (hovered && row.tooltip != null) {
-                int tooltipWidth = Math.max(120, Math.min(TOOLTIP_MAX_WIDTH, this.width - 32));
+                int tooltipWidth = Math.clamp(this.width - 32, 120, TOOLTIP_MAX_WIDTH);
                 graphics.setTooltipForNextFrame(
                     this.font,
                     this.font.split(row.tooltip, tooltipWidth),
@@ -788,7 +821,7 @@ public final class TeamcraftConfigScreen extends Screen {
     }
 
     private void clampScroll() {
-        this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, maxScroll()));
+        this.scrollOffset = Math.clamp(this.scrollOffset, 0, maxScroll());
     }
 
     private int maxScroll() {

@@ -18,6 +18,9 @@
     "client": [
       "io.github.piscescup.fabricmc.teamcraft.client.TeamcraftClient"
     ],
+    "modmenu": [
+      "io.github.piscescup.fabricmc.teamcraft.compat.modmenu.TeamCraftModMenu"
+    ],
     "main": [
       "io.github.piscescup.fabricmc.teamcraft.Teamcraft"
     ]
@@ -27,5 +30,8 @@
     "fabric-api": "*",
     "minecraft": "${minecraft_dependency}",
     "java": "${java_dependency}"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

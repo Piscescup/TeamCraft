@@ -36,7 +36,7 @@ public record TeamcraftConfigData(
     private static final int DEFAULT_TEAM_COUNT = 2;
 
     public TeamcraftConfigData {
-        mode = Objects.requireNonNull(mode, "mode");
+        Objects.requireNonNull(mode, "mode");
         colors = List.copyOf(colors);
         names = List.copyOf(names);
     }

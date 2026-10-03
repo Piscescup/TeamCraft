@@ -9,6 +9,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -42,8 +43,8 @@ public final class PermissionDeniedScreen extends Screen {
 
     @Override
     protected void init() {
-        int dialogWidth = Math.min(MAX_DIALOG_WIDTH, Math.max(200, this.width - 32));
-        int dialogHeight = Math.min(DIALOG_HEIGHT, Math.max(96, this.height - 32));
+        int dialogWidth = Math.clamp(this.width - 32, 200, MAX_DIALOG_WIDTH);
+        int dialogHeight = Math.clamp(this.height - 32, 96, DIALOG_HEIGHT);
         this.dialogLeft = (this.width - dialogWidth) / 2;
         this.dialogTop = (this.height - dialogHeight) / 2;
         this.dialogRight = this.dialogLeft + dialogWidth;
@@ -62,7 +63,7 @@ public final class PermissionDeniedScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(@NonNull GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (this.parent != null) {
             this.parent.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }

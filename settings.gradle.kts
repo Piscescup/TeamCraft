@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import org.gradle.kotlin.dsl.maven
 
 pluginManagement {
 	repositories {

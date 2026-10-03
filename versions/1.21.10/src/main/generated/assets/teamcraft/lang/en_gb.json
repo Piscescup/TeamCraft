@@ -87,7 +87,7 @@
   "teamcraft.gui.error.invalid_server": "The server rejected these settings; check the values and try again",
   "teamcraft.gui.error.name_too_long": "Each team name may contain at most %s characters",
   "teamcraft.gui.error.no_candidates": "No candidate players are selected; choose players from the list first",
-  "teamcraft.gui.error.permission": "You do not have permission to edit TeamCraft settings",
+  "teamcraft.gui.error.permission": "You do not have permission to perform this TeamCraft action",
   "teamcraft.gui.error.players_per_team": "Players per team must be a whole number from %1$s to %2$s",
   "teamcraft.gui.error.server_unsupported": "This server does not support the TeamCraft configuration screen",
   "teamcraft.gui.error.team_count": "Number of teams must be a whole number from %1$s to %2$s",

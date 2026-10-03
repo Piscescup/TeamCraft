@@ -146,6 +146,15 @@ public final class Msg
      * Renders the localized color name in its own color.
      */
     public static MutableComponent colorName(TeamcraftColor color) {
+        return plainColorName(color).withColor(color.textColor());
+    }
+
+    /**
+     * Renders the localized color name without fixing a text color on it.
+     * This lets a containing team name inherit the scoreboard team's current
+     * color when that color is changed later.
+     */
+    public static MutableComponent plainColorName(TeamcraftColor color) {
         TeamcraftTranslations translation = switch (color) {
             case BLACK -> TeamcraftTranslations.COLOR_BLACK;
             case DARK_BLUE -> TeamcraftTranslations.COLOR_DARK_BLUE;
@@ -164,7 +173,7 @@ public final class Msg
             case YELLOW -> TeamcraftTranslations.COLOR_YELLOW;
             case WHITE -> TeamcraftTranslations.COLOR_WHITE;
         };
-        return tr(translation.key()).withColor(color.textColor());
+        return tr(translation.key());
     }
 
     /**
