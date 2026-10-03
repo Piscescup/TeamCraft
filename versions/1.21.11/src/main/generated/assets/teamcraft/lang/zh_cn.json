@@ -87,7 +87,7 @@
   "teamcraft.gui.error.invalid_server": "服务器拒绝了这些设置，请检查数值后重试",
   "teamcraft.gui.error.name_too_long": "每个队伍名称最多包含 %s 个字符",
   "teamcraft.gui.error.no_candidates": "尚未选择候选玩家，请先从列表中添加玩家",
-  "teamcraft.gui.error.permission": "你没有修改 TeamCraft 设置的权限",
+  "teamcraft.gui.error.permission": "权限不足，无法执行此 TeamCraft 操作",
   "teamcraft.gui.error.players_per_team": "每队人数必须是 %1$s 到 %2$s 之间的整数",
   "teamcraft.gui.error.server_unsupported": "当前服务器不支持 TeamCraft 配置界面",
   "teamcraft.gui.error.team_count": "队伍数量必须是 %1$s 到 %2$s 之间的整数",

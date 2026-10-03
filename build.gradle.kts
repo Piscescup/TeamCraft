@@ -44,6 +44,13 @@ val mainProjectName = file("versions/mainProject").readText().trim()
 val mainDatagenTaskPath = ":$mainProjectName:runDatagen"
 
 subprojects {
+	repositories {
+		maven {
+			name = "Terraformers"
+			url = uri("https://maven.terraformersmc.com/")
+		}
+	}
+
 	if (name != mainProjectName) {
 		tasks.matching { it.name == "preprocessResources" }.configureEach {
 			// Order explicitly requested datagen before reading its output.

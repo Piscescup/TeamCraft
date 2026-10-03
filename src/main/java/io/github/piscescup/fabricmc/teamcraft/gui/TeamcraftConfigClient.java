@@ -76,7 +76,6 @@ public final class TeamcraftConfigClient {
 
     /**
      * Requests an authoritative snapshot before creating the screen.
-     * This is also suitable for a future Mod Menu integration.
      */
     public static void requestOpen(Screen parent) {
         Minecraft client = Minecraft.getInstance();
@@ -94,6 +93,21 @@ public final class TeamcraftConfigClient {
             //$$ client.player.displayClientMessage(Component.translatable(TeamcraftTranslations.GUI_LOADING.key()), true);
             //#endif
         }
+    }
+
+    /**
+     * Creates the screen exposed through Mod Menu.
+     *
+     * <p>Changing the configuration requires an active server connection, so
+     * an in-world client first receives a small loading screen while the
+     * authoritative snapshot is requested. From the title screen, or when the
+     * connected server does not have TeamCraft, the read-only Help page is
+     * still available.</p>
+     */
+    public static Screen createModMenuScreen(Screen parent) {
+        return ClientPlayNetworking.canSend(ConfigRequestPayload.TYPE)
+            ? new TeamcraftModMenuScreen(parent)
+            : TeamcraftConfigScreen.help(parent);
     }
 
     public static boolean save(TeamcraftConfigData config, List<String> candidates, boolean buildTeams) {

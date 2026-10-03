@@ -27,6 +27,6 @@ public record SplitPlan(String teamId, TeamcraftColor color, Component displayNa
      */
     @NonNull
     public String visualTeamString() {
-        return (displayName.getString() + "<" + teamId + ">").replace(' ', '_');
+        return (displayName.getString() + "-" + teamId).replace(' ', '_');
     }
 }
