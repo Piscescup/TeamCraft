@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 //$$ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 //#endif
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -80,7 +81,7 @@ public final class TeamcraftConfigClient {
     public static void requestOpen(Screen parent) {
         Minecraft client = Minecraft.getInstance();
         if (!ClientPlayNetworking.canSend(ConfigRequestPayload.TYPE)) {
-            notifyPlayer(client, TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(client, TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return;
         }
 
@@ -97,7 +98,7 @@ public final class TeamcraftConfigClient {
 
     public static boolean save(TeamcraftConfigData config, List<String> candidates, boolean buildTeams) {
         if (!ClientPlayNetworking.canSend(ConfigUpdatePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return false;
         }
         ClientPlayNetworking.send(new ConfigUpdatePayload(config, candidates, buildTeams));
@@ -107,7 +108,7 @@ public final class TeamcraftConfigClient {
     public static boolean saveOwnTeam(String teamId, String displayName, TeamcraftColor color,
                                       boolean friendlyFire) {
         if (!ClientPlayNetworking.canSend(TeamUpdatePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return false;
         }
         ClientPlayNetworking.send(new TeamUpdatePayload(teamId, displayName, color, friendlyFire));
@@ -116,7 +117,7 @@ public final class TeamcraftConfigClient {
 
     public static boolean disbandTeam(String teamId) {
         if (!ClientPlayNetworking.canSend(TeamDeletePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return false;
         }
         ClientPlayNetworking.send(new TeamDeletePayload(TeamDeletePayload.Target.ONE, teamId));
@@ -125,7 +126,7 @@ public final class TeamcraftConfigClient {
 
     public static boolean clearAllTeams() {
         if (!ClientPlayNetworking.canSend(TeamDeletePayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return false;
         }
         ClientPlayNetworking.send(new TeamDeletePayload(TeamDeletePayload.Target.ALL));
@@ -134,7 +135,7 @@ public final class TeamcraftConfigClient {
 
     public static boolean refresh() {
         if (!ClientPlayNetworking.canSend(ConfigRequestPayload.TYPE)) {
-            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key());
+            notifyPlayer(Minecraft.getInstance(), TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), ChatFormatting.RED);
             return false;
         }
         ClientPlayNetworking.send(ConfigRequestPayload.INSTANCE);
@@ -179,11 +180,16 @@ public final class TeamcraftConfigClient {
             return;
         }
 
+        if (payload.response() == ConfigSyncPayload.Response.PERMISSION_DENIED) {
+            PermissionDeniedScreen.open(pendingParent);
+            return;
+        }
+
         String key = switch (payload.response()) {
             case SAVED -> TeamcraftTranslations.GUI_SAVED.key();
             case BUILT -> TeamcraftTranslations.GUI_BUILT.key();
             case TEAM_SAVED -> TeamcraftTranslations.GUI_TEAM_SAVED.key();
-            case PERMISSION_DENIED -> TeamcraftTranslations.GUI_ERROR_PERMISSION.key();
+            case PERMISSION_DENIED -> throw new IllegalStateException("Handled above");
             case NO_CANDIDATES -> TeamcraftTranslations.GUI_ERROR_NO_CANDIDATES.key();
             case TEAMS_EXIST -> TeamcraftTranslations.GUI_ERROR_TEAMS_EXIST.key();
             case TOO_MANY_TEAMS -> TeamcraftTranslations.GUI_ERROR_TOO_MANY_TEAMS.key();
@@ -193,15 +199,20 @@ public final class TeamcraftConfigClient {
             case INVALID -> TeamcraftTranslations.GUI_ERROR_INVALID_SERVER.key();
             case OPENED -> throw new IllegalStateException("Handled above");
         };
-        notifyPlayer(client, key);
+        ChatFormatting color = switch (payload.response()) {
+            case SAVED, BUILT, TEAM_SAVED, TEAM_DISBANDED, ALL_TEAMS_CLEARED -> ChatFormatting.GREEN;
+            default -> ChatFormatting.RED;
+        };
+        notifyPlayer(client, key, color);
     }
 
-    private static void notifyPlayer(Minecraft client, String translationKey) {
+    private static void notifyPlayer(Minecraft client, String translationKey, ChatFormatting color) {
         if (client.player != null) {
             //#if MC >= 260102
-            client.player.sendSystemMessage(Component.translatable(translationKey));
+            client.player.sendSystemMessage(Component.translatable(translationKey).withStyle(color));
             //#else
-            //$$ client.player.displayClientMessage(Component.translatable(translationKey), false);
+            //$$ client.player.displayClientMessage(
+            //$$     Component.translatable(translationKey).withStyle(color), false);
             //#endif
         }
     }

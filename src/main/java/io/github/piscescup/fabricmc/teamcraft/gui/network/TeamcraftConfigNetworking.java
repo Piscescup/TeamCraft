@@ -2,6 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigData;
 import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.permission.TeamPermissionManager;
 import io.github.piscescup.fabricmc.teamcraft.team.SplitPlan;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
@@ -27,6 +28,13 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.BUILD_KEY;
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.CLEAR_KEY;
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.CONFIG_KEY;
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.INIT_KEY;
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.MANAGE_KEY;
+import static io.github.piscescup.fabricmc.teamcraft.permission.TeamCommandPermission.ROOT_KEY;
+
 /** Common-side registration and validation for the configuration GUI protocol. */
 public final class TeamcraftConfigNetworking {
     private TeamcraftConfigNetworking() {
@@ -49,7 +57,7 @@ public final class TeamcraftConfigNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(ConfigRequestPayload.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
-            if (!hasConfigPermission(player)) {
+            if (!hasPermission(player, ROOT_KEY)) {
                 send(player, ConfigSyncPayload.Response.PERMISSION_DENIED);
                 return;
             }
@@ -60,7 +68,12 @@ public final class TeamcraftConfigNetworking {
             ServerPlayer player = context.player();
             TeamSession session = TeamSessionManager.get();
 
-            if (!hasConfigPermission(player)) {
+            boolean changesConfig = !payload.config().equals(TeamcraftConfigData.fromSession(session));
+            boolean changesCandidates = !payload.candidates().equals(session.getCandidates());
+            if (!hasPermission(player, ROOT_KEY)
+                || (changesConfig && !hasPermission(player, CONFIG_KEY))
+                || (changesCandidates && !hasPermission(player, INIT_KEY))
+                || (payload.buildTeams() && !hasPermission(player, BUILD_KEY))) {
                 send(player, ConfigSyncPayload.Response.PERMISSION_DENIED);
                 return;
             }
@@ -83,7 +96,7 @@ public final class TeamcraftConfigNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(TeamUpdatePayload.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
-            if (!hasConfigPermission(player)) {
+            if (!hasPermission(player, ROOT_KEY) || !hasPermission(player, MANAGE_KEY)) {
                 send(player, ConfigSyncPayload.Response.PERMISSION_DENIED);
                 return;
             }
@@ -110,7 +123,10 @@ public final class TeamcraftConfigNetworking {
 
         ServerPlayNetworking.registerGlobalReceiver(TeamDeletePayload.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
-            if (!hasConfigPermission(player)) {
+            String permissionKey = payload.target() == TeamDeletePayload.Target.ALL
+                ? CLEAR_KEY
+                : MANAGE_KEY;
+            if (!hasPermission(player, ROOT_KEY) || !hasPermission(player, permissionKey)) {
                 send(player, ConfigSyncPayload.Response.PERMISSION_DENIED);
                 return;
             }
@@ -171,18 +187,20 @@ public final class TeamcraftConfigNetworking {
     }
 
     //#if MC >= 12111
-    private static boolean hasConfigPermission(
+    private static boolean hasPermission(
         //#if MC >= 12111
         @NonNull
         //#endif
-        ServerPlayer player
+        ServerPlayer player,
+        String permissionKey
     ) {
-        // Keep the GUI permission identical to the existing /teamcraft command root.
-        return Commands.hasPermission(Commands.LEVEL_ALL).test(player.createCommandSourceStack());
+        return Commands.hasPermission(TeamPermissionManager.getPermission(permissionKey).toPermission())
+            .test(player.createCommandSourceStack());
     }
     //#else
-    //$$ private static boolean hasConfigPermission(ServerPlayer player) {
-    //$$     return player.createCommandSourceStack().hasPermission(0);
+    //$$ private static boolean hasPermission(ServerPlayer player, String permissionKey) {
+    //$$     return player.createCommandSourceStack()
+    //$$         .hasPermission(TeamPermissionManager.getPermission(permissionKey).toPermission());
     //$$ }
     //#endif
 
