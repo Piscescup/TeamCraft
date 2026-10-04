@@ -95,6 +95,10 @@ fabricApi {
 	}
 }
 
+if (providers.gradleProperty("teamcraft_multiplayer_tests").orNull == "true") {
+	apply(from = rootProject.file("scripts/multiplayer-tests.gradle"))
+}
+
 sourceSets.main {
 	resources {
 		exclude(".cache/**")

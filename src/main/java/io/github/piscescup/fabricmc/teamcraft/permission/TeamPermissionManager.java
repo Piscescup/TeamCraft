@@ -2,6 +2,8 @@ package io.github.piscescup.fabricmc.teamcraft.permission;
 
 import io.github.piscescup.fabricmc.teamcraft.io.TeamcraftPermissionSavedData;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  *
@@ -31,6 +33,15 @@ public final class TeamPermissionManager {
 
     public static synchronized Permission getPermission(String key) {
         return permission.getPermission(key);
+    }
+
+    /** Checks the running world's policy for both command and GUI actions. */
+    public static boolean hasPermission(ServerPlayer player, String key) {
+        //#if MC >= 12111
+        return Commands.hasPermission(getPermission(key).toPermission()).test(player.createCommandSourceStack());
+        //#else
+        //$$ return player.createCommandSourceStack().hasPermission(getPermission(key).toPermission());
+        //#endif
     }
 
     /**

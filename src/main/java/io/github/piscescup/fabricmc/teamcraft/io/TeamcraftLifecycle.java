@@ -2,6 +2,7 @@ package io.github.piscescup.fabricmc.teamcraft.io;
 
 import io.github.piscescup.fabricmc.teamcraft.permission.TeamPermissionManager;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
+import io.github.piscescup.fabricmc.teamcraft.team.TeamInvitationManager;
 import net.minecraft.server.MinecraftServer;
 
 /**
@@ -18,6 +19,7 @@ public final class TeamcraftLifecycle {
     }
 
     public static void unload(MinecraftServer server) {
+        TeamInvitationManager.unload(server);
         TeamSessionManager.unload(server);
         TeamPermissionManager.unload(server);
     }

@@ -1,4 +1,4 @@
-package io.github.piscescup.fabricmc.teamcraft.gui;
+package io.github.piscescup.fabricmc.teamcraft.config;
 
 import io.github.piscescup.fabricmc.teamcraft.team.SplitMode;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;

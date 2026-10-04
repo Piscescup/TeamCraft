@@ -1,4 +1,4 @@
-package io.github.piscescup.fabricmc.teamcraft.gui;
+package io.github.piscescup.fabricmc.teamcraft.config;
 
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -31,8 +31,8 @@ public record TeamInfoData(
         if (id.length() > MAX_TEAM_ID_LENGTH) {
             throw new IllegalArgumentException("Team id exceeds " + MAX_TEAM_ID_LENGTH + " characters");
         }
-        displayName = Objects.requireNonNull(displayName, "displayName");
-        color = Objects.requireNonNull(color, "color");
+        Objects.requireNonNull(displayName, "displayName");
+        Objects.requireNonNull(color, "color");
         members = List.copyOf(members);
     }
 

@@ -1,72 +1,90 @@
 package io.github.piscescup.fabricmc.teamcraft.gui;
 
+import io.github.piscescup.fabricmc.teamcraft.config.TeamcraftConfigData;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
-import net.minecraft.ChatFormatting;
+import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftFeedbackScreen.Type;
 
 /** Executes footer actions and coordinates their client/server waiting state. */
-final class TeamcraftConfigActions {
+public final class TeamcraftConfigActions {
     private TeamcraftConfigActions() {
     }
 
-    static void submitConfig(TeamcraftConfigScreen screen, boolean buildTeams) {
-        TeamcraftConfigDraft draft = TeamcraftConfigDraft.create(screen);
+    public static void submitConfig(TeamcraftPageContext context, boolean buildTeams) {
+        TeamcraftConfigDraft draft = TeamcraftConfigDraft.create(context);
         if (draft.error() != null) {
-            screen.showOverlay(draft.error(), ChatFormatting.RED);
+            context.showFeedback(draft.error(), Type.ERROR);
             return;
         }
-        screen.waitingForServer = true;
-        screen.updateEnabledState();
-        if (!TeamcraftConfigClient.save(draft.config(), screen.candidates, buildTeams)) {
-            screen.waitingForServer = false;
-            screen.updateEnabledState();
+        context.waitingForServer = true;
+        context.updateEnabledState();
+        if (!TeamcraftConfigClient.save(draft.config(), context.candidates, buildTeams)) {
+            unsupportedServer(context);
         }
     }
 
-    static void submitOwnTeam(TeamcraftConfigScreen screen) {
-        if (screen.ownTeam == null) {
-            screen.showOverlay(TeamcraftTranslations.GUI_ERROR_TEAM_NOT_FOUND.key(), ChatFormatting.RED);
+    public static void submitOwnTeam(TeamcraftPageContext context) {
+        if (context.ownTeam == null) {
+            context.showFeedback(TeamcraftTranslations.GUI_ERROR_TEAM_NOT_FOUND.key(), Type.ERROR);
             return;
         }
-        String name = screen.ownTeamName.trim();
+        String name = context.ownTeamName.trim();
         if (name.isEmpty()) {
-            screen.showOverlay(TeamcraftTranslations.GUI_ERROR_EMPTY_TEAM_NAME.key(), ChatFormatting.RED);
+            context.showFeedback(TeamcraftTranslations.GUI_ERROR_EMPTY_TEAM_NAME.key(), Type.ERROR);
             return;
         }
-        screen.waitingForServer = true;
-        screen.updateEnabledState();
+        context.waitingForServer = true;
+        context.updateEnabledState();
         if (!TeamcraftConfigClient.saveOwnTeam(
-            screen.ownTeam.id(),
+            context.ownTeam.id(),
             name,
-            screen.ownTeamcraftColor,
-            screen.ownTeamFriendlyFire
+            context.ownTeamcraftColor,
+            context.ownTeamFriendlyFire
         )) {
-            screen.waitingForServer = false;
-            screen.updateEnabledState();
+            unsupportedServer(context);
         }
     }
 
-    static void refresh(TeamcraftConfigScreen screen) {
-        screen.waitingForServer = true;
-        screen.updateEnabledState();
+    public static void refresh(TeamcraftPageContext context) {
+        context.waitingForServer = true;
+        context.updateEnabledState();
         if (!TeamcraftConfigClient.refresh()) {
-            screen.waitingForServer = false;
-            screen.updateEnabledState();
+            unsupportedServer(context);
         }
     }
 
-    static void clearAllTeams(TeamcraftConfigScreen screen) {
-        screen.waitingForServer = true;
-        screen.updateEnabledState();
+    public static void leaveTeam(TeamcraftPageContext context) {
+        if (context.waitingForServer) {
+            return;
+        }
+        if (context.ownTeam == null) {
+            context.showFeedback(TeamcraftTranslations.ERROR_NOT_IN_TEAM.key(), Type.ERROR);
+            return;
+        }
+        context.waitingForServer = true;
+        context.updateEnabledState();
+        if (!TeamcraftConfigClient.leaveTeam(context.ownTeam.id())) {
+            unsupportedServer(context);
+        }
+    }
+
+    public static void clearAllTeams(TeamcraftPageContext context) {
+        context.waitingForServer = true;
+        context.updateEnabledState();
         if (!TeamcraftConfigClient.clearAllTeams()) {
-            screen.waitingForServer = false;
-            screen.updateEnabledState();
+            unsupportedServer(context);
         }
     }
 
-    static void restoreDefaults(TeamcraftConfigScreen screen) {
-        screen.loadConfig(TeamcraftConfigData.defaults());
-        screen.resetScroll();
-        screen.rebuildPage();
-        screen.showOverlay(TeamcraftTranslations.GUI_DEFAULTS_READY.key(), ChatFormatting.YELLOW);
+    public static void restoreDefaults(TeamcraftPageContext context) {
+        context.loadConfig(TeamcraftConfigData.defaults());
+        context.resetScroll();
+        context.rebuildPage();
+        context.showFeedback(TeamcraftTranslations.GUI_DEFAULTS_READY.key(), Type.INFO);
+    }
+
+    private static void unsupportedServer(TeamcraftPageContext context) {
+        context.waitingForServer = false;
+        context.updateEnabledState();
+        context.showFeedback(TeamcraftTranslations.GUI_ERROR_SERVER_UNSUPPORTED.key(), Type.ERROR);
     }
 }

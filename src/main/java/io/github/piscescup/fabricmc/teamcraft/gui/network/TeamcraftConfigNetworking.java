@@ -1,12 +1,13 @@
 package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigData;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamcraftConfigData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamInfoData;
 import io.github.piscescup.fabricmc.teamcraft.permission.TeamPermissionManager;
 import io.github.piscescup.fabricmc.teamcraft.team.SplitPlan;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamAssigner;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSession;
 import io.github.piscescup.fabricmc.teamcraft.team.TeamSessionManager;
+import io.github.piscescup.fabricmc.teamcraft.team.TeamMembershipService;
 import io.github.piscescup.fabricmc.teamcraft.text.Msg;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -41,17 +42,20 @@ public final class TeamcraftConfigNetworking {
     }
 
     public static void register() {
+        TeamcraftInvitationNetworking.register();
         //#if MC >= 260102
         PayloadTypeRegistry.serverboundPlay().register(ConfigRequestPayload.TYPE, ConfigRequestPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ConfigUpdatePayload.TYPE, ConfigUpdatePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TeamUpdatePayload.TYPE, TeamUpdatePayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(TeamDeletePayload.TYPE, TeamDeletePayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(TeamLeavePayload.TYPE, TeamLeavePayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(ConfigSyncPayload.TYPE, ConfigSyncPayload.CODEC);
         //#else
         //$$ PayloadTypeRegistry.playC2S().register(ConfigRequestPayload.TYPE, ConfigRequestPayload.CODEC);
         //$$ PayloadTypeRegistry.playC2S().register(ConfigUpdatePayload.TYPE, ConfigUpdatePayload.CODEC);
         //$$ PayloadTypeRegistry.playC2S().register(TeamUpdatePayload.TYPE, TeamUpdatePayload.CODEC);
         //$$ PayloadTypeRegistry.playC2S().register(TeamDeletePayload.TYPE, TeamDeletePayload.CODEC);
+        //$$ PayloadTypeRegistry.playC2S().register(TeamLeavePayload.TYPE, TeamLeavePayload.CODEC);
         //$$ PayloadTypeRegistry.playS2C().register(ConfigSyncPayload.TYPE, ConfigSyncPayload.CODEC);
         //#endif
 
@@ -119,6 +123,16 @@ public final class TeamcraftConfigNetworking {
             team.setAllowFriendlyFire(payload.friendlyFire());
             TeamAssigner.applyPrefix(team);
             send(player, ConfigSyncPayload.Response.TEAM_SAVED);
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(TeamLeavePayload.TYPE, (payload, context) -> {
+            TeamMembershipService.Result result = TeamMembershipService.leave(context.player(), payload.teamId());
+            send(context.player(), switch (result.outcome()) {
+                case LEFT -> ConfigSyncPayload.Response.TEAM_LEFT;
+                case PERMISSION_DENIED -> ConfigSyncPayload.Response.PERMISSION_DENIED;
+                case NOT_IN_TEAM -> ConfigSyncPayload.Response.NOT_IN_TEAM;
+                case TEAM_CHANGED -> ConfigSyncPayload.Response.TEAM_NOT_FOUND;
+            });
         });
 
         ServerPlayNetworking.registerGlobalReceiver(TeamDeletePayload.TYPE, (payload, context) -> {

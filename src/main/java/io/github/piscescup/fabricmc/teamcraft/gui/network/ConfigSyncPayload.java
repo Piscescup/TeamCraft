@@ -1,8 +1,8 @@
 package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.References;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigData;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamcraftConfigData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamInfoData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -71,7 +71,9 @@ public record ConfigSyncPayload(
         TOO_MANY_TEAMS,
         TEAM_NOT_FOUND,
         TEAM_DISBANDED,
-        ALL_TEAMS_CLEARED;
+        ALL_TEAMS_CLEARED,
+        TEAM_LEFT,
+        NOT_IN_TEAM;
 
         private static Response fromId(int id) {
             if (id < 0 || id >= values().length) {

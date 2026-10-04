@@ -23,10 +23,11 @@ public record SplitPlan(String teamId, TeamcraftColor color, Component displayNa
     }
 
     /**
-     * Returns the readable, command-safe scoreboard id.
+     * Returns the stable scoreboard id. Display names are deliberately kept
+     * separate so renaming a team never changes how it is persisted.
      */
     @NonNull
     public String visualTeamString() {
-        return (displayName.getString() + "-" + teamId).replace(' ', '_');
+        return teamId;
     }
 }

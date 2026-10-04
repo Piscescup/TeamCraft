@@ -1,6 +1,9 @@
 package io.github.piscescup.fabricmc.teamcraft.permission;
 
 
+import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 import java.util.Map;
 
@@ -20,6 +23,8 @@ public class TeamCommandPermission {
     public static final String STATUS_KEY = "status";
     public static final String HELP_KEY = "help";
     public static final String PERMISSION_KEY = "permission";
+    public static final String INVITE_KEY = "invite";
+    public static final String LEAVE_TEAM_KEY = "leaveteam";
 
     public static final TeamCommandPermission DEFAULT_PERMISSION_CONFIG = Builder.defaultConfig()
         .build();
@@ -36,10 +41,13 @@ public class TeamCommandPermission {
         RESET_KEY,
         STATUS_KEY,
         HELP_KEY,
-        PERMISSION_KEY
+        PERMISSION_KEY,
+        INVITE_KEY,
+        LEAVE_TEAM_KEY
     );
 
-    private TeamCommandPermission(Builder builder) {
+    @Contract(pure = true)
+    private TeamCommandPermission(@NonNull Builder builder) {
         this.commandPermissions = builder.commandPermissions;
     }
 
@@ -60,6 +68,8 @@ public class TeamCommandPermission {
             this.commandPermissions = new java.util.HashMap<>();
         }
 
+        @NonNull
+        @Contract(value = " -> new", pure = true)
         public static Builder create() {
             return new Builder();
         }
@@ -75,6 +85,8 @@ public class TeamCommandPermission {
                 .reset(Permission.LEVEL_GAMEMASTERS)
                 .status(Permission.LEVEL_ALL)
                 .help(Permission.LEVEL_ALL)
+                .invite(Permission.LEVEL_ALL)
+                .leaveTeam(Permission.LEVEL_ALL)
                 .permission(Permission.LEVEL_GAMEMASTERS);
         }
 
@@ -121,6 +133,14 @@ public class TeamCommandPermission {
 
         public Builder permission(Permission permission) {
             return setPermission(PERMISSION_KEY, permission);
+        }
+
+        public Builder invite(Permission permission) {
+            return setPermission(INVITE_KEY, permission);
+        }
+
+        public Builder leaveTeam(Permission permission) {
+            return setPermission(LEAVE_TEAM_KEY, permission);
         }
 
         public TeamCommandPermission build() {

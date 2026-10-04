@@ -4,6 +4,7 @@ import io.github.piscescup.fabricmc.teamcraft.References;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jspecify.annotations.NonNull;
 
 /** Requests the current server-owned TeamCraft configuration. */
 public record ConfigRequestPayload() implements CustomPacketPayload {
@@ -11,6 +12,7 @@ public record ConfigRequestPayload() implements CustomPacketPayload {
     public static final Type<ConfigRequestPayload> TYPE = new Type<>(References.fromPath("config_request"));
     public static final StreamCodec<RegistryFriendlyByteBuf, ConfigRequestPayload> CODEC = StreamCodec.unit(INSTANCE);
 
+    @NonNull
     @Override
     public Type<ConfigRequestPayload> type() {
         return TYPE;

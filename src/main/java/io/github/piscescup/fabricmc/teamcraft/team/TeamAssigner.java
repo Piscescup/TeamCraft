@@ -17,9 +17,8 @@ import java.util.List;
 
 /**
  * Computes a split plan from a {@link TeamSession} and applies it to (or removes
- * it from) the vanilla scoreboard. A created team's readable scoreboard id ends
- * with an internal id using {@link #TEAM_ID_PREFIX}, so it can be identified
- * even after a server restart.
+ * it from) the vanilla scoreboard. Each created team has a stable internal id
+ * using {@link #TEAM_ID_PREFIX}, independent of its mutable display name.
  *
  * @author REN YuanTong
  * @since 1.0.0
@@ -190,25 +189,14 @@ public final class TeamAssigner
     }
 
     /**
-     * Accepts both legacy ids ({@code teamcraft_1}) and readable ids
-     * ({@code Red_Team<teamcraft_1>}).
+     * Matches the stable id format used by TeamCraft, for example
+     * {@code teamcraft_1}.
      */
     public static boolean isManagedTeamId(String teamId) {
-        if (teamId == null || teamId.isEmpty()) {
+        if (teamId == null || !teamId.startsWith(TEAM_ID_PREFIX)) {
             return false;
         }
-
-        String internalId;
-
-        int openBracket = teamId.lastIndexOf('-');
-
-        internalId = teamId.substring(openBracket + 1);
-
-        if (!internalId.startsWith(TEAM_ID_PREFIX)) {
-            return false;
-        }
-
-        String sequence = internalId.substring(TEAM_ID_PREFIX.length());
+        String sequence = teamId.substring(TEAM_ID_PREFIX.length());
         return !sequence.isEmpty() && sequence.chars().allMatch(Character::isDigit);
     }
 
