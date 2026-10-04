@@ -1,11 +1,12 @@
 package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.References;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamInfoData;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftColor;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 
@@ -41,6 +42,7 @@ public record TeamUpdatePayload(
         return Objects.requireNonNull(TeamcraftColor.byName(name), () -> "Unknown team color: " + name);
     }
 
+    @NonNull
     @Override
     public Type<TeamUpdatePayload> type() {
         return TYPE;

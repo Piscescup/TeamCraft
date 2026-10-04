@@ -1,5 +1,8 @@
 package io.github.piscescup.fabricmc.teamcraft.gui;
 
+import io.github.piscescup.fabricmc.teamcraft.gui.widget.TeamcraftButton;
+import io.github.piscescup.fabricmc.teamcraft.gui.render.TeamcraftGuiTheme;
+
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -27,7 +30,7 @@ final class TeamcraftModMenuScreen extends Screen {
         }
 
         int buttonWidth = Math.clamp(this.width - 40, 100, 160);
-        addRenderableWidget(Button.builder(
+        addRenderableWidget(TeamcraftButton.themedBuilder(
             Component.translatable(TeamcraftTranslations.GUI_CLOSE.key()),
             ignored -> onClose()
         ).bounds((this.width - buttonWidth) / 2, this.height / 2 + 28, buttonWidth, 20).build());
@@ -35,7 +38,11 @@ final class TeamcraftModMenuScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        graphics.fill(0, 0, this.width, this.height, 0xD0101318);
+        graphics.fill(0, 0, this.width, this.height, TeamcraftGuiTheme.BACKGROUND);
+        int halfWidth = Math.min(180, Math.max(1, (this.width - 20) / 2));
+        TeamcraftGuiTheme.frame(graphics, this.width / 2 - halfWidth, this.height / 2 - 44,
+            this.width / 2 + halfWidth, this.height / 2 + 58,
+            TeamcraftGuiTheme.PANEL, TeamcraftGuiTheme.BORDER);
         graphics.centeredText(this.font, this.title, this.width / 2, this.height / 2 - 28, 0xFFFFFFFF);
         graphics.centeredText(
             this.font,
@@ -47,12 +54,13 @@ final class TeamcraftModMenuScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
-    //#if MC < 12108
-    //$$ /** This screen draws its own complete background. */
-    //$$ @Override
+    @Override
+    //#if MC >= 260102
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+    //#else
     //$$ public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-    //$$ }
     //#endif
+    }
 
     @Override
     public void onClose() {

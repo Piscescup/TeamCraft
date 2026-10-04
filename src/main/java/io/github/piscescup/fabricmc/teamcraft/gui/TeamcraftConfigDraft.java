@@ -1,33 +1,34 @@
 package io.github.piscescup.fabricmc.teamcraft.gui;
 
+import io.github.piscescup.fabricmc.teamcraft.config.TeamcraftConfigData;
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.Component;
 
 /** Validates the editable GUI state and produces the server-bound configuration. */
 record TeamcraftConfigDraft(TeamcraftConfigData config, Component error) {
-    static TeamcraftConfigDraft create(TeamcraftConfigScreen screen) {
+    static TeamcraftConfigDraft create(TeamcraftPageContext context) {
         TeamcraftConfigData defaults = TeamcraftConfigData.defaults();
         Integer playersPerTeam = parseBoundedInteger(
-            screen.playersPerTeamText,
+            context.playersPerTeamText,
             TeamcraftConfigData.MIN_PLAYERS_PER_TEAM,
             TeamcraftConfigData.MAX_PLAYERS_PER_TEAM
         );
         Integer teamCount = parseBoundedInteger(
-            screen.teamCountText,
+            context.teamCountText,
             TeamcraftConfigData.MIN_TEAM_COUNT,
             TeamcraftConfigData.MAX_TEAM_COUNT
         );
 
         // Only the value belonging to the selected split rule is user-facing.
         // A stale invalid value from the hidden rule must not block saving.
-        if (!screen.fixedTeamCount && playersPerTeam == null) {
+        if (!context.fixedTeamCount && playersPerTeam == null) {
             return error(Component.translatable(
                 TeamcraftTranslations.GUI_ERROR_PLAYERS_PER_TEAM.key(),
                 TeamcraftConfigData.MIN_PLAYERS_PER_TEAM,
                 TeamcraftConfigData.MAX_PLAYERS_PER_TEAM
             ));
         }
-        if (screen.fixedTeamCount && teamCount == null) {
+        if (context.fixedTeamCount && teamCount == null) {
             return error(Component.translatable(
                 TeamcraftTranslations.GUI_ERROR_TEAM_COUNT.key(),
                 TeamcraftConfigData.MIN_TEAM_COUNT,
@@ -41,7 +42,7 @@ record TeamcraftConfigDraft(TeamcraftConfigData config, Component error) {
             teamCount = defaults.teamCount();
         }
 
-        if (screen.configuredNames.size() > TeamcraftConfigData.MAX_LIST_SIZE) {
+        if (context.configuredNames.size() > TeamcraftConfigData.MAX_LIST_SIZE) {
             return error(Component.translatable(
                 TeamcraftTranslations.GUI_ERROR_TOO_MANY_VALUES.key(),
                 TeamcraftConfigData.MAX_LIST_SIZE
@@ -49,13 +50,13 @@ record TeamcraftConfigDraft(TeamcraftConfigData config, Component error) {
         }
 
         return new TeamcraftConfigDraft(new TeamcraftConfigData(
-            screen.fixedTeamCount,
+            context.fixedTeamCount,
             playersPerTeam,
             teamCount,
-            screen.mode,
-            screen.friendlyFire,
-            screen.configuredColors,
-            screen.configuredNames
+            context.mode,
+            context.friendlyFire,
+            context.configuredColors,
+            context.configuredNames
         ), null);
     }
 

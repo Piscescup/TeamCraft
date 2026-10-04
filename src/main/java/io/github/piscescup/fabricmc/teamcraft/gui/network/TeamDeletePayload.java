@@ -1,10 +1,11 @@
 package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.References;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamInfoData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamInfoData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jspecify.annotations.NonNull;
 
 /** Requests removal of one managed team or every TeamCraft-managed team. */
 public record TeamDeletePayload(Target target, String teamId) implements CustomPacketPayload {
@@ -25,6 +26,7 @@ public record TeamDeletePayload(Target target, String teamId) implements CustomP
         buffer.writeUtf(this.teamId, TeamInfoData.MAX_TEAM_ID_LENGTH);
     }
 
+    @NonNull
     @Override
     public Type<TeamDeletePayload> type() {
         return TYPE;

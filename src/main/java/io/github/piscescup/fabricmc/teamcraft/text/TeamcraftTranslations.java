@@ -9,6 +9,49 @@ package io.github.piscescup.fabricmc.teamcraft.text;
 public enum TeamcraftTranslations {
     KEY_CATEGORY_TEAMCRAFT_GENERAL("key.category.teamcraft.general", "TeamCraft", "TeamCraft"),
     KEY_TEAMCRAFT_OPEN_CONFIG("key.teamcraft.open_config", "打开 TeamCraft 配置", "Open TeamCraft configuration"),
+    KEY_TEAMCRAFT_OPEN_TEAMS("key.teamcraft.open_teams", "查看所有队伍", "Show all teams"),
+    KEY_TEAMCRAFT_OPEN_OWN_TEAM("key.teamcraft.open_own_team", "查看自己的队伍", "Show my team"),
+    GUI_NAV_HOTKEYS("teamcraft.gui.nav.hotkeys", "快捷键", "Hotkeys"),
+    GUI_NAV_HOTKEYS_TOOLTIP("teamcraft.gui.nav.hotkeys.tooltip", "设置常用页面的快捷键，仅保存在本地", "Bind shortcuts for common pages; saved locally"),
+    GUI_EXPAND_HINT("teamcraft.gui.expand_hint", "提示：点击 [+] 以展开", "Hint: click [+] to expand"),
+    GUI_TOOLTIP_FUNCTION("teamcraft.gui.tooltip.function", "功能：", "Function: "),
+    GUI_TOOLTIP_EXAMPLE("teamcraft.gui.tooltip.example", "示例：", "Example: "),
+    GUI_RESET("teamcraft.gui.reset", "重置", "Reset"),
+    GUI_RESET_TOOLTIP("teamcraft.gui.reset.tooltip", "重置仅恢复此项的默认值；保存后才会应用到服务器。", "Reset restores only this setting to its default; save to apply it to the server."),
+    GUI_BUTTON_ACTION("teamcraft.gui.button.action", "操作：%s", "Action: %s"),
+    GUI_BUTTON_CHANGE("teamcraft.gui.button.change", "点击或滚动切换%s", "Click or scroll to change %s"),
+    GUI_BUTTON_EXPAND("teamcraft.gui.button.expand", "展开此分组", "Expand this group"),
+    GUI_BUTTON_COLLAPSE("teamcraft.gui.button.collapse", "收起此分组", "Collapse this group"),
+    GUI_BUTTON_COLOR("teamcraft.gui.button.color", "打开颜色选择器", "Open the color picker"),
+    GUI_BUTTON_SELECT_ALL("teamcraft.gui.button.select_all", "将所有在线玩家加入候选名单", "Add all online players to the candidates"),
+    GUI_BUTTON_CLEAR_CANDIDATES("teamcraft.gui.button.clear_candidates", "清空候选玩家选择", "Clear the candidate selection"),
+    GUI_BUTTON_SELECT_PLAYER("teamcraft.gui.button.select_player", "将 %s 加入候选名单", "Add %s to the candidates"),
+    GUI_BUTTON_REMOVE_PLAYER("teamcraft.gui.button.remove_player", "将 %s 移出候选名单；拖动可调整顺序", "Remove %s from the candidates; drag to reorder"),
+    GUI_BUTTON_ADD_NAME("teamcraft.gui.button.add_name", "将输入的队名加入列表", "Add the entered team name to the list"),
+    GUI_BUTTON_REMOVE_NAME("teamcraft.gui.button.remove_name", "从列表移除此队名", "Remove this team name from the list"),
+    GUI_BUTTON_NAME_SLOT("teamcraft.gui.button.name_slot", "此位置使用的队名", "The team name configured for this slot"),
+    GUI_BUTTON_ADD_COLOR("teamcraft.gui.button.add_color", "将选中的颜色加入列表", "Add the selected color to the list"),
+    GUI_BUTTON_REMOVE_COLOR("teamcraft.gui.button.remove_color", "从列表移除此颜色", "Remove this color from the list"),
+    GUI_BUTTON_DEFAULT_COLORS("teamcraft.gui.button.default_colors", "清空自定义颜色，恢复默认调色板", "Clear custom colors and restore the default palette"),
+    GUI_BUTTON_DETAILS("teamcraft.gui.button.details", "查看此队伍的详细信息", "View this team's details"),
+    GUI_BUTTON_BIND_KEY("teamcraft.gui.button.bind_key", "点击后按下键盘或鼠标按键设置快捷键", "Click, then press a keyboard or mouse button to bind a shortcut"),
+    GUI_BUTTON_CLEAR_KEY("teamcraft.gui.button.clear_key", "清除该快捷键绑定", "Clear this shortcut binding"),
+    GUI_BUTTON_RESET_KEY("teamcraft.gui.button.reset_key", "恢复该快捷键的默认绑定", "Restore this shortcut's default binding"),
+    GUI_BUTTON_CLOSE("teamcraft.gui.button.close", "关闭配置页面", "Close the configuration screen"),
+    GUI_BUTTON_DEFAULTS("teamcraft.gui.button.defaults", "将全部分队配置草稿恢复默认值", "Restore all split settings in the draft to defaults"),
+    GUI_BUTTON_APPLY("teamcraft.gui.button.apply", "保存配置和候选名单，不执行分队", "Save settings and candidates without splitting teams"),
+    GUI_BUTTON_SPLIT("teamcraft.gui.button.split", "保存配置并为候选玩家分队", "Save settings and split the candidate players into teams"),
+    GUI_BUTTON_REFRESH("teamcraft.gui.button.refresh", "从服务器重新获取配置与队伍信息", "Reload settings and team information from the server"),
+    GUI_BUTTON_SAVE_TEAM("teamcraft.gui.button.save_team", "保存当前队伍的修改", "Save changes to your team"),
+    GUI_BUTTON_CLEAR_TEAMS("teamcraft.gui.button.clear_teams", "解散全部 TeamCraft 队伍，保留配置和候选名单", "Disband all TeamCraft teams, keeping settings and candidates"),
+    GUI_HOTKEYS_HINT("teamcraft.gui.hotkeys.hint", "点击按键按钮后按下键盘或鼠标按键；Esc 取消绑定。快捷键也可以在游戏的按键设置中修改。", "Click a key button, then press a keyboard or mouse button. Esc clears the binding. These shortcuts also appear in Minecraft's Controls settings."),
+    GUI_HOTKEYS_WAITING("teamcraft.gui.hotkeys.waiting", "请按下按键…", "Press a key…"),
+    GUI_HOTKEYS_RESET("teamcraft.gui.hotkeys.reset", "重置", "RESET"),
+    GUI_HOTKEYS_CLEAR("teamcraft.gui.hotkeys.clear", "清除", "Clear"),
+    GUI_HOTKEYS_CONFLICT("teamcraft.gui.hotkeys.conflict", "此按键与 %s 冲突，请选择其他按键", "This key conflicts with %s; choose another key"),
+    GUI_HOTKEYS_OPEN_CONFIG_TOOLTIP("teamcraft.gui.hotkeys.open_config.tooltip", "打开 TeamCraft 配置页面。服务器仍会检查权限。", "Open TeamCraft's configuration page. Server permissions still apply."),
+    GUI_HOTKEYS_OPEN_TEAMS_TOOLTIP("teamcraft.gui.hotkeys.open_teams.tooltip", "直接打开所有队伍列表，查看队名、颜色和成员。", "Open the all-teams list to view team names, colors and members."),
+    GUI_HOTKEYS_OPEN_OWN_TEAM_TOOLTIP("teamcraft.gui.hotkeys.open_own_team.tooltip", "直接打开自己的队伍页面，查看所属队伍。修改仍需要相应权限。", "Open your team's page. Changing team settings still requires permission."),
     CLEAR_DONE("teamcraft.clear.done", "已解散 %s 支队伍；候选名单与配置均已保留", "Removed %s teams; candidates and settings were kept"),
     CLEAR_NONE("teamcraft.clear.none", "当前没有由 TeamCraft 创建的队伍", "There are no TeamCraft teams to remove"),
     COLOR_AQUA("teamcraft.color.aqua", "青色", "Aqua"),
@@ -100,10 +143,20 @@ public enum TeamcraftTranslations {
         "队伍 %1$s 不是由 TeamCraft 创建的；只能修改 ID 以 %2$s 开头的队伍",
         "Team %1$s is not managed by TeamCraft; only IDs starting with %2$s can be changed"
     ),
+    ERROR_TEAM_AMBIGUOUS(
+        "teamcraft.error.team_ambiguous",
+        "有多支队伍使用名称 %s，请改用对应的内部 ID",
+        "Multiple teams use the name %s; use the corresponding internal ID"
+    ),
+    ERROR_TEAM_NOT_FOUND(
+        "teamcraft.error.team_not_found",
+        "找不到内部 ID 或当前名称为 %s 的 TeamCraft 队伍",
+        "No TeamCraft team has the internal ID or current name %s"
+    ),
     ERROR_TEAMS_EXIST(
         "teamcraft.error.teams_exist",
-        "已存在 TeamCraft 队伍，请先执行 /teamcraft clear 再次分队",
-        "TeamCraft teams already exist. Run /teamcraft clear before splitting again."
+        "已存在 TeamCraft 队伍，请先清除现有队伍后重试",
+        "TeamCraft teams already exist. Please clear existing teams and try again."
     ),
     ERROR_TOO_MANY_TEAMS(
         "teamcraft.error.too_many_teams",
@@ -168,6 +221,7 @@ public enum TeamcraftTranslations {
     ),
     GUI_CATEGORY_OWN_TEAM("teamcraft.gui.category.own_team", "所属队伍信息配置", "My Team Settings"),
     GUI_CATEGORY_SPLIT("teamcraft.gui.category.split", "分队设置", "Split Settings"),
+    GUI_CATEGORY_SPLIT_CONFIG("teamcraft.gui.category.split_config", "队伍分队配置", "Team Split Config"),
     GUI_CLOSE("teamcraft.gui.close", "关闭", "Close"),
     GUI_COLORS_ADD("teamcraft.gui.colors.add", "添加颜色", "Add color"),
     GUI_COLORS_DEFAULT_PALETTE(
@@ -242,8 +296,8 @@ public enum TeamcraftTranslations {
     ),
     GUI_ERROR_TEAMS_EXIST(
         "teamcraft.gui.error.teams_exist",
-        "已存在 TeamCraft 队伍，请先执行 /teamcraft clear 再重新分队",
-        "TeamCraft teams already exist; run /teamcraft clear before splitting again"
+        "已存在 TeamCraft 队伍，请先清除现有队伍后重试",
+        "TeamCraft teams already exist. Please clear existing teams and try again."
     ),
     GUI_ERROR_TOO_MANY_TEAMS(
         "teamcraft.gui.error.too_many_teams",
@@ -373,23 +427,23 @@ public enum TeamcraftTranslations {
     ),
     GUI_HELP_CMD_TEAM_COLOR(
         "teamcraft.gui.help.command.team_color",
-        "作用：修改一支现有 TeamCraft 队伍的颜色及玩家名前缀颜色。\n参数：<team> 为内部记分板 ID（如 teamcraft_1）；<color> 为颜色 ID。\n示例：/teamcraft team-manage teamcraft_1 color blue",
-        "Purpose: Change the color and player-name prefix color of an existing TeamCraft team.\nParameters: <team> is the internal scoreboard ID, such as teamcraft_1; <color> is a color ID.\nExample: /teamcraft team-manage teamcraft_1 color blue"
+        "作用：修改自己所在 TeamCraft 队伍的颜色及玩家名前缀颜色。\n参数：<team> 仅支持自己队伍的当前显示名称或内部 ID（如 teamcraft_1）；<color> 为颜色 ID。\n示例：/teamcraft manage team teamcraft_1 color blue",
+        "Purpose: Change your own TeamCraft team's color and player-name prefix color.\nParameters: <team> must be your own team's current display name or internal ID, such as teamcraft_1; <color> is a color ID.\nExample: /teamcraft manage team teamcraft_1 color blue"
     ),
     GUI_HELP_CMD_TEAM_FRIENDLY_FIRE(
         "teamcraft.gui.help.command.team_friendly_fire",
-        "作用：立即修改一支现有队伍的友方伤害。\n参数：<team> 为内部 ID；<true|false> 分别表示允许或禁止队友互伤。\n示例：/teamcraft team-manage teamcraft_1 friendlyfire false",
-        "Purpose: Immediately change friendly fire for an existing team.\nParameters: <team> is the internal ID; <true|false> allows or prevents teammate damage.\nExample: /teamcraft team-manage teamcraft_1 friendlyfire false"
+        "作用：立即修改自己所在队伍的友方伤害。\n参数：<team> 仅支持自己队伍的当前显示名称或内部 ID；<true|false> 分别表示允许或禁止队友互伤。\n示例：/teamcraft manage team teamcraft_1 friendlyfire false",
+        "Purpose: Immediately change friendly fire for your own team.\nParameters: <team> must be your own team's current display name or internal ID; <true|false> allows or prevents teammate damage.\nExample: /teamcraft manage team teamcraft_1 friendlyfire false"
     ),
     GUI_HELP_CMD_TEAM_INFO(
         "teamcraft.gui.help.command.team_info",
-        "作用：查看指定队伍的内部 ID、显示名称、颜色、友方伤害和成员。\n参数：<team> 为 TeamCraft 队伍的内部记分板 ID。\n示例：/teamcraft team-manage teamcraft_1 info",
-        "Purpose: Show a team's internal ID, display name, color, friendly fire and members.\nParameters: <team> is the internal scoreboard ID of a TeamCraft team.\nExample: /teamcraft team-manage teamcraft_1 info"
+        "作用：查看自己所在队伍的内部 ID、显示名称、颜色、友方伤害和成员。\n参数：<team> 仅支持自己 TeamCraft 队伍的当前显示名称或内部 ID。\n示例：/teamcraft manage team teamcraft_1 info",
+        "Purpose: Show your own team's internal ID, display name, color, friendly fire and members.\nParameters: <team> must be your own TeamCraft team's current display name or internal ID.\nExample: /teamcraft manage team teamcraft_1 info"
     ),
     GUI_HELP_CMD_TEAM_NAME(
         "teamcraft.gui.help.command.team_name",
-        "作用：修改一支现有队伍的显示名称，并同步更新玩家名前缀。\n参数：<team> 为内部 ID；<name> 为新名称，含空格时必须加引号。\n示例：/teamcraft team-manage teamcraft_1 name \"建筑队\"",
-        "Purpose: Change an existing team's display name and update its player prefix.\nParameters: <team> is the internal ID; <name> is the new name and must be quoted when it contains spaces.\nExample: /teamcraft team-manage teamcraft_1 name \"Builders\""
+        "作用：修改自己所在队伍的显示名称，并同步更新玩家名前缀。\n参数：<team> 仅支持自己队伍的当前显示名称或内部 ID；<name> 为新名称，含空格时必须加引号。改名后候选名称随之更新，内部 ID 不变。\n示例：/teamcraft manage team teamcraft_1 name \"建筑队\"",
+        "Purpose: Change your own team's display name and update its player prefix.\nParameters: <team> must be your own team's current display name or internal ID; <name> is the new name and must be quoted when it contains spaces. Renaming updates name suggestions without changing the internal ID.\nExample: /teamcraft manage team teamcraft_1 name \"Builders\""
     ),
     GUI_HELP_COMMAND_BUILD_TITLE("teamcraft.gui.help.command.build_title", "创建队伍", "Build Teams"),
     GUI_HELP_COMMAND_CANDIDATES_TITLE("teamcraft.gui.help.command.candidates_title", "候选名单命令", "Candidate List Commands"),
@@ -601,17 +655,56 @@ public enum TeamcraftTranslations {
     HELP_RESET("teamcraft.help.reset", "解散队伍并恢复全部默认设置", "Remove teams and restore all defaults"),
     HELP_START("teamcraft.help.start", "创建队伍并分配玩家", "Create and assign the teams"),
     HELP_STATUS("teamcraft.help.status", "查看候选玩家、配置与现有队伍", "Show candidates, configuration and active teams"),
-    HELP_TEAM("teamcraft.help.team", "在分队后调整指定队伍", "Adjust a team after it has been created"),
+    HELP_TEAM("teamcraft.help.team", "管理自己所在的队伍；仅支持自己的队伍 ID 或当前名称", "Manage your own team using its internal ID or current display name"),
+    ERROR_NOT_OWN_TEAM("teamcraft.error.not_own_team", "只能管理自己所在的 TeamCraft 队伍，请使用自己的队伍 ID 或当前名称", "You can only manage your own TeamCraft team; use its internal ID or current display name"),
+    HELP_INVITE("teamcraft.help.invite", "邀请在线玩家加入自己的队伍；邀请有效期为 120 秒", "Invite an online player to your team; invitations expire after 120 seconds"),
+    HELP_LEAVE_TEAM("teamcraft.help.leaveteam", "退出自己的 TeamCraft 队伍；队伍和其他成员不受影响，候选名单和配置保持不变。退出会取消你发送和收到的待处理邀请。", "Leave your own TeamCraft team without disbanding it or affecting other members, candidates, or configuration. Pending invitations sent or received by you are cancelled."),
+    TEAM_LEFT("teamcraft.team.left", "已退出队伍 %s", "You left %s"),
+    ERROR_NOT_IN_TEAM("teamcraft.error.not_in_team", "你当前没有加入 TeamCraft 队伍", "You do not currently belong to a TeamCraft team"),
+    GUI_LEAVE_TEAM("teamcraft.gui.leave_team", "退出队伍", "Leave Team"),
+    GUI_LEAVE_TEAM_TOOLTIP("teamcraft.gui.leave_team.tooltip", "仅退出自己的队伍，不会解散队伍或保存未提交的设置", "Leave only your own team; do not disband it or save pending changes"),
+    GUI_TEAM_LEFT("teamcraft.gui.team_left", "已退出队伍，队伍和其他成员保持不变", "You left the team; the team and other members are unchanged"),
+    GUI_NAV_INVITATIONS("teamcraft.gui.nav.invitations", "队伍邀请", "Invitations"),
+    GUI_NAV_INVITATIONS_TOOLTIP("teamcraft.gui.nav.invitations.tooltip", "邀请在线玩家加入队伍，接受或拒绝收到的邀请", "Invite online players to your team and accept or decline received invitations"),
+    GUI_INVITE_RECEIVED("teamcraft.gui.invite.received", "收到的邀请", "Received Invitation"),
+    GUI_INVITE_RECEIVED_TOOLTIP("teamcraft.gui.invite.received.tooltip", "接受后加入邀请者的队伍；拒绝不会加入。邀请在 120 秒后失效，队伍被解散或邀请者离队后也会失效。", "Accept to join the inviter's team, or decline to stay unassigned. Invitations expire after 120 seconds and become invalid if the team is disbanded or the inviter leaves."),
+    GUI_INVITE_SEND("teamcraft.gui.invite.send", "邀请玩家", "Invite Players"),
+    GUI_INVITE_SEND_TOOLTIP("teamcraft.gui.invite.send.tooltip", "点击在线玩家向其发送邀请，只列出尚未加入队伍的玩家。对方接受后才会入队；每人最多有一条待处理的邀请。", "Click an online player to send an invitation. Only players without a team are listed. They join only after accepting; each player can have one pending invitation."),
+    GUI_INVITE_NONE("teamcraft.gui.invite.none", "当前没有待处理的邀请", "You have no pending invitation"),
+    GUI_INVITE_FROM("teamcraft.gui.invite.from", "邀请者", "Invited by"),
+    GUI_INVITE_TEAM("teamcraft.gui.invite.team", "队伍", "Team"),
+    GUI_INVITE_REMAINING("teamcraft.gui.invite.remaining", "剩余 %s 秒", "%s seconds remaining"),
+    GUI_INVITE_ACCEPT("teamcraft.gui.invite.accept", "接受", "Accept"),
+    GUI_INVITE_DECLINE("teamcraft.gui.invite.decline", "拒绝", "Decline"),
+    GUI_INVITE_NO_PLAYERS("teamcraft.gui.invite.no_players", "没有可邀请的在线玩家", "No online players are available to invite"),
+    GUI_INVITE_PLAYER("teamcraft.gui.invite.player", "邀请 %s", "Invite %s"),
+    GUI_INVITE_PLAYER_HINT("teamcraft.gui.invite.player_hint", "邀请 %s 加入你的队伍", "Invite %s to join your team"),
+    GUI_INVITE_OFFLINE("teamcraft.gui.invite.offline", "该玩家已离线，请刷新后重试", "That player is offline; refresh and try again"),
+    GUI_INVITE_TIMEOUT("teamcraft.gui.invite.timeout", "邀请请求超时，请刷新后重试。操作可能已完成，请先检查队伍或邀请状态。", "The invitation request timed out. Refresh and check your team or invitation before retrying; the action may already have completed."),
+    HELP_INVITE_ACCEPT("teamcraft.help.invite_accept", "接受当前邀请并加入队伍", "Accept your pending invitation and join the team"),
+    HELP_INVITE_DECLINE("teamcraft.help.invite_decline", "拒绝当前邀请", "Decline your pending invitation"),
+    INVITE_SENT("teamcraft.invite.sent", "已邀请 %1$s 加入 %2$s", "Invited %1$s to join %2$s"),
+    INVITE_RECEIVED("teamcraft.invite.received", "%1$s 邀请你加入 %2$s。请在 %3$s 秒内使用 /teamcraft invite accept 接受，或使用 /teamcraft invite decline 拒绝。", "%1$s invited you to join %2$s. Use /teamcraft invite accept to accept or /teamcraft invite decline to decline within %3$s seconds."),
+    INVITE_ACCEPTED("teamcraft.invite.accepted", "已接受邀请，加入 %s", "Accepted the invitation and joined %s"),
+    INVITE_JOINED("teamcraft.invite.joined", "%1$s 接受了邀请，加入 %2$s", "%1$s accepted your invitation and joined %2$s"),
+    INVITE_DECLINED("teamcraft.invite.declined", "已拒绝加入 %s 的邀请", "Declined the invitation to join %s"),
+    INVITE_REJECTED("teamcraft.invite.rejected", "%s 拒绝了你的邀请", "%s declined your invitation"),
+    INVITE_ERROR_NO_TEAM("teamcraft.invite.error.no_team", "请先加入 TeamCraft 队伍，再邀请玩家", "Join a TeamCraft team before inviting players"),
+    INVITE_ERROR_SELF("teamcraft.invite.error.self", "不能邀请自己", "You cannot invite yourself"),
+    INVITE_ERROR_HAS_TEAM("teamcraft.invite.error.has_team", "%s 已有队伍，请先退出现有队伍后重试", "%s already belongs to a team; leave the existing team before trying again"),
+    INVITE_ERROR_PENDING("teamcraft.invite.error.pending", "%s 已有待处理的邀请，请等待其回复或邀请过期", "%s already has a pending invitation; wait for a reply or for it to expire"),
+    INVITE_ERROR_NONE("teamcraft.invite.error.none", "没有待处理的邀请，或邀请已过期", "You have no pending invitation, or it has expired"),
+    INVITE_ERROR_UNAVAILABLE("teamcraft.invite.error.unavailable", "邀请已失效：队伍已被解散，或邀请者已不在该队伍", "The invitation is no longer valid: the team was disbanded or the inviter left it"),
     HELP_TEAM_COUNT(
         "teamcraft.help.team_count",
         "固定队伍数量，并将候选玩家尽量平均分配",
         "Create exactly this many teams and distribute players as evenly as possible"
     ),
-    INIT_ADD("teamcraft.init.add", "已添加 %1$s 人 • 当前共 %2$s 人", "Added %1$s players • %2$s total"),
-    INIT_ADD_SKIPPED(
+    INIT_ADD("teamcraft.init.add", "已添加 %1$s  • 当前共 %2$s 人", "Added %1$s  • %2$s total"),
+    INIT_ADD_DUPLICATED(
         "teamcraft.init.add_skipped",
-        "已添加 %1$s 人 • 当前共 %2$s 人 • 跳过 %3$s 个重复玩家",
-        "Added %1$s players • %2$s total • skipped %3$s duplicates"
+        "%1$s 已经被添加 • 当前共 %2$s 人 ",
+        "%1$s duplicates, skipped"
     ),
     INIT_CLEAR("teamcraft.init.clear", "候选名单已清空", "Candidate list cleared"),
     INIT_LIST_EMPTY(
@@ -619,11 +712,11 @@ public enum TeamcraftTranslations {
         "候选名单为空，请先使用 /teamcraft init <players...> 设置名单",
         "The candidate list is empty. Use /teamcraft init <players...> first."
     ),
-    INIT_REMOVE("teamcraft.init.remove", "已移除 %1$s 人 • 剩余 %2$s 人", "Removed %1$s players • %2$s remaining"),
+    INIT_REMOVE("teamcraft.init.remove", "已移除 %1$s • 剩余 %2$s 人", "Removed %1$s • %2$s remaining"),
     INIT_REMOVE_MISSING(
         "teamcraft.init.remove_missing",
-        "已移除 %1$s 人 • 剩余 %2$s 人 • %3$s 人原本不在名单中",
-        "Removed %1$s players • %2$s remaining • %3$s were not listed"
+        "%1$s 不在名单中 • 剩余 %2$s 人。",
+        "%1$s was not listed • %2$s remaining."
     ),
     INIT_SET("teamcraft.init.set", "候选名单已设置：%1$s 人 • %2$s", "Candidate list set: %1$s players • %2$s"),
     MODE_FIXED("teamcraft.mode.fixed", "按顺序", "Ordered"),

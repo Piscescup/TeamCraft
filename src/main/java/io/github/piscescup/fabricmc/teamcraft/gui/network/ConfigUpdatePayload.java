@@ -1,10 +1,11 @@
 package io.github.piscescup.fabricmc.teamcraft.gui.network;
 
 import io.github.piscescup.fabricmc.teamcraft.References;
-import io.github.piscescup.fabricmc.teamcraft.gui.TeamcraftConfigData;
+import io.github.piscescup.fabricmc.teamcraft.config.TeamcraftConfigData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,7 @@ public record ConfigUpdatePayload(
         buffer.writeBoolean(this.buildTeams);
     }
 
+    @NonNull
     @Override
     public Type<ConfigUpdatePayload> type() {
         return TYPE;

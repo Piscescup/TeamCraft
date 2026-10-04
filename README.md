@@ -59,7 +59,8 @@ The following table shows the minimum Java version required for each supported M
 6. Add custom team names and colors if needed.
 7. Click **Apply** to save the settings, or **Save & Split** to create the teams immediately.
 
-The default key can be changed from Minecraft's **Options → Controls** menu.
+Click **[+]** to expand a settings group. Hover over a setting to see its purpose and examples.
+Page shortcuts can be changed on TeamCraft's **Hotkeys** page or in Minecraft's **Options → Controls** menu.
 
 ### Using commands
 
@@ -90,10 +91,32 @@ Manage candidate players, split rules, assignment order, friendly fire, team col
 
 View your current TeamCraft team and change its name, color, or friendly-fire setting.
 Changing the color does not rename the team.
+Click **Leave Team** beside your own name in the member list to leave your TeamCraft team. This does not save pending edits,
+disband the team, or remove other members; empty teams are kept.
 
 ### All Teams
 
 Browse all teams managed by TeamCraft, inspect their members and settings, open team details, or disband teams.
+
+### Invitations
+
+Open the **Invitations** tab while connected to a TeamCraft server. Under **Invite Players**,
+click an online player to invite them to your current team. Only players without a team are listed.
+Under **Received Invitation**, check the inviter, team, and remaining time, then click **Accept**
+or **Decline**. This page refreshes automatically while open; **Refresh** also updates it manually.
+Joining updates **My Team** and **All Teams** without changing your unsaved split configuration.
+
+Sending requires membership in a TeamCraft team and the `invite` permission. Accepting and declining
+do not require permission to send invitations. Invitations expire after 120 seconds.
+
+### Hotkeys
+
+Bind shortcuts to open **Team Setup**, **All Teams**, or **My Team** directly while playing.
+Team Setup defaults to `Backspace`; the other two shortcuts are unbound by default.
+
+Click a binding button, then press a keyboard or mouse button. Press `Esc` to unbind it,
+use **×** to clear it, or **RESET** to restore its default. Conflicting bindings are shown in red.
+Bindings are saved locally, and server permissions still apply when opening or editing team settings.
 
 ### Help
 
@@ -104,13 +127,13 @@ Mod Menu can also open this read-only Help page when you are not in a world.
 
 ### Candidate players
 
-|                Command                |                                        Description                                         |
-|:-------------------------------------:|:------------------------------------------------------------------------------------------:|
-|    `/teamcraft init <players...>`     | Replace the candidate list with the selected players; selectors such as `@a` are supported |
-|  `/teamcraft init add <players...>`   |                             Add players to the candidate list                              |
-| `/teamcraft init remove <players...>` |                           Remove players from the candidate list                           |
-|        `/teamcraft init list`         |                              Show the current candidate list                               |
-|        `/teamcraft init clear`        |                                  Clear the candidate list                                  |
+|              Command              |                                        Description                                         |
+|:---------------------------------:|:------------------------------------------------------------------------------------------:|
+|  `/teamcraft init <players...>`   | Replace the candidate list with the selected players; selectors such as `@a` are supported |
+|  `/teamcraft init add <player>`   |                              Add player to the candidate list                              |
+| `/teamcraft init remove <player>` |                           Remove player from the candidate list                            |
+|      `/teamcraft init list`       |                              Show the current candidate list                               |
+|      `/teamcraft init clear`      |                                  Clear the candidate list                                  |
 
 ### Team configuration
 
@@ -128,21 +151,52 @@ Mod Menu can also open this read-only Help page when you are not in a world.
 
 ### Creating and managing teams
 
-|                          Command                           |                                Description                                 |
-|:----------------------------------------------------------:|:--------------------------------------------------------------------------:|
-|                  `/teamcraft build-teams`                  |         Create teams and assign players using the current settings         |
-|        `/teamcraft build-teams colors <colors...>`         |                Create teams with a one-time color override                 |
-|         `/teamcraft build-teams names <names...>`          |                 Create teams with a one-time name override                 |
-|                    `/teamcraft status`                     |        Show the candidate list, current settings, and active teams         |
-|            `/teamcraft team-manage <team> info`            |                       Show information about a team                        |
-|       `/teamcraft team-manage <team> color <color>`        |                 Change a team's color without renaming it                  |
-|        `/teamcraft team-manage <team> name <name>`         |                        Change a team's display name                        |
-| `/teamcraft team-manage <team> friendlyfire <true\|false>` |                   Change a team's friendly-fire setting                    |
-|                     `/teamcraft clear`                     | Disband TeamCraft teams while keeping the candidate list and configuration |
-|                     `/teamcraft reset`                     | Disband teams, clear the candidate list, and restore all default settings  |
-|                     `/teamcraft help`                      |                         Show command help in chat                          |
+|                          Command                           |                                  Description                                  |
+|:----------------------------------------------------------:|:-----------------------------------------------------------------------------:|
+|                  `/teamcraft build-teams`                  |          Create teams and assign players using the current settings           |
+|        `/teamcraft build-teams colors <colors...>`         |                  Create teams with a one-time color override                  |
+|         `/teamcraft build-teams names <names...>`          |                  Create teams with a one-time name override                   |
+|                    `/teamcraft status`                     |          Show the candidate list, current settings, and active teams          |
+|                 `/teamcraft manage leave`                  | Leave your own TeamCraft team without disbanding it or removing other members |
+|            `/teamcraft manage team <team> info`            |                     Show information about your own team                      |
+|       `/teamcraft manage team <team> color <color>`        |               Change your own team's color without renaming it                |
+|        `/teamcraft manage team <team> name <name>`         |                      Change your own team's display name                      |
+| `/teamcraft manage team <team> friendlyfire <true\|false>` |                 Change your own team's friendly-fire setting                  |
+|                     `/teamcraft clear`                     |  Disband TeamCraft teams while keeping the candidate list and configuration   |
+|                     `/teamcraft reset`                     |   Disband teams, clear the candidate list, and restore all default settings   |
+|                     `/teamcraft help`                      |                           Show command help in chat                           |
 
 Minecraft's command suggestions can be used to select players, teams, colors, and permission levels.
+
+For `/teamcraft manage team`, `<team>` must be your own TeamCraft team's ID or current
+display name. Suggestions only include these two values. Renaming updates the suggested
+name while the ID stays unchanged. Quote names containing spaces. You cannot manage
+another player's team through this command, and the existing permission checks still apply.
+
+### Team invitations
+
+Any member of a TeamCraft team can invite an online player who does not already belong to a team:
+
+```text
+/teamcraft invite player PlayerName
+```
+
+The invited player can respond with:
+
+```text
+/teamcraft invite accept
+/teamcraft invite decline
+```
+
+Invitations expire after 120 seconds. Each player can have one pending invitation;
+another invitation does not overwrite it. Accepting joins the inviter's existing team
+without changing its name, color, or settings. Invitations become invalid if the team
+is disbanded or the inviter leaves it, and are discarded when the server stops.
+Invitations do not change the split candidate list or enforce the players-per-team split setting.
+Use `/teamcraft manage leave`, or **Leave Team** on the **My Team** page, before accepting
+an invitation to a different team. Leaving cancels pending invitations sent or received
+by you. It does not remove you from the split candidate list or change the configuration;
+a future split can assign you again if you remain a candidate.
 
 ## Permissions
 
@@ -170,18 +224,20 @@ all < moderators < gamemasters < admins < owners
 Available permission keys and the commands they control:
 
 
-|           Command           | Permission Key | Default Vaule |
-|:---------------------------:|:--------------:|:-------------:|
-|        `/teamcraft`         |     `root`     |     `all`     |
-|    `/teamcraft init ...`    |     `init`     |     `all`     |
-|   `/teamcraft config ..`    |    `config`    |     `all`     |
-|   `/teamcraft status ...`   |    `status`    |     `all`     |
-|   `/teamcraft manage ...`   |    `manage`    | `gamemasters` |
-|   `/teamcraft build ...`    |    `build`     | `gamemasters` |
-| `/teamcraft permission ...` |  `permission`  |   `admins`    |
-|     `/teamcraft clear`      |    `clear`     | `gamemasters` |
-|     `/teamcraft reset`      |    `reset`     |   `admins`    |
-|      `/teamcraft help`      |     `help`     |     `all`     |
+|            Command             |            Permission Key            | Default Vaule |
+|:------------------------------:|:------------------------------------:|:-------------:|
+|          `/teamcraft`          |                `root`                |     `all`     |
+|     `/teamcraft init ...`      |                `init`                |     `all`     |
+|     `/teamcraft config ..`     |               `config`               |     `all`     |
+|    `/teamcraft status ...`     |               `status`               |     `all`     |
+|    `/teamcraft manage ...`     |               `manage`               | `gamemasters` |
+|     `/teamcraft build ...`     |               `build`                | `gamemasters` |
+|  `/teamcraft permission ...`   |             `permission`             |   `admins`    |
+|       `/teamcraft clear`       |               `clear`                | `gamemasters` |
+|       `/teamcraft reset`       |               `reset`                |   `admins`    |
+|       `/teamcraft help`        |                `help`                |     `all`     |
+| `/teamcraft invite player ...` |               `invite`               |     `all`     |
+|   `/teamcraft manage leave`    | `leaveteam` (also requires `manage`) |     `all`     |
 
 
 
@@ -194,6 +250,9 @@ For example, to allow only game masters and higher-level users to create teams:
 ```
 
 Setting `root` to an administrator-only level hides the entire `/teamcraft` command tree from players without the required permission.
+
+The `invite` permission controls sending invitations. Accepting or declining requires
+access to the root command, but does not require the sending permission.
 
 ## Notes
 

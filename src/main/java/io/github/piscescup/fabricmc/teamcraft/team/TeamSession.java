@@ -50,8 +50,8 @@ public final class TeamSession
     }
 
     /**
-     * @return the readable scoreboard ids ({@code Red_Team@teamcraft_1}, ...)
-     * of teams created by the last start
+     * @return the stable scoreboard ids ({@code teamcraft_1}, ...)
+     * of teams created by the last split
      */
     public List<String> getCreatedTeams() {
         return this.createdTeams;

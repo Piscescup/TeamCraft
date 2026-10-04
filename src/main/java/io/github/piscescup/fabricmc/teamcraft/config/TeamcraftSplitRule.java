@@ -1,10 +1,10 @@
-package io.github.piscescup.fabricmc.teamcraft.gui;
+package io.github.piscescup.fabricmc.teamcraft.config;
 
 import io.github.piscescup.fabricmc.teamcraft.text.TeamcraftTranslations;
 import net.minecraft.network.chat.Component;
 
 /** Split-rule choices displayed by the team configuration page. */
-enum TeamcraftSplitRule {
+public enum TeamcraftSplitRule {
     PLAYERS_PER_TEAM(TeamcraftTranslations.GUI_RULE_PLAYERS_PER_TEAM.key()),
     TEAM_COUNT(TeamcraftTranslations.GUI_RULE_TEAM_COUNT.key());
 
@@ -14,7 +14,7 @@ enum TeamcraftSplitRule {
         this.translationKey = translationKey;
     }
 
-    Component displayName() {
+    public Component displayName() {
         return Component.translatable(this.translationKey);
     }
 }

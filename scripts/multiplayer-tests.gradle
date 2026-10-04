@@ -1,0 +1,63 @@
+// Opt-in test mod; never packaged in the release jar or loaded in normal runs.
+fabricApi.configureTests {
+    createSourceSet = true
+    modId = 'teamcraft_multiplayer_tests'
+    enableGameTests = false
+    enableClientGameTests = false
+}
+
+sourceSets.gametest.java.setSrcDirs([rootProject.file('scripts/multiplayer/java')])
+sourceSets.gametest.resources.setSrcDirs([rootProject.file('scripts/multiplayer/resources')])
+
+def testRunId = providers.gradleProperty('teamcraft_test_run').getOrElse('manual')
+if (!(testRunId ==~ /[a-zA-Z0-9_-]+/)) {
+    throw new GradleException('teamcraft_test_run must contain only letters, digits, underscores or hyphens')
+}
+def testDirectory = layout.buildDirectory.dir("multiplayer-tests/${testRunId}").get().asFile
+
+loom.runs.create('multiplayerTest') {
+    inherit loom.runs.server
+    source sourceSets.gametest
+    runDir "build/multiplayer-tests/${testRunId}"
+    ideConfigGenerated false
+    programArgs '--nogui', '--port', '0'
+    property 'teamcraft.multiplayer.test', 'true'
+    property 'teamcraft.multiplayer.version', project.name
+    vmArgs '-Xms256M', '-Xmx1536M'
+}
+
+tasks.named('runMultiplayerTest') {
+    timeout = java.time.Duration.ofMinutes(3)
+    doFirst {
+        // Reuse an existing acceptance; never accept the EULA on the user's behalf.
+        def acceptedEula = rootProject.file('versions').listFiles()
+            .findAll { it.isDirectory() }
+            .collect { new File(it, 'run/eula.txt') }
+            .find { it.isFile() && it.readLines().any { line -> line.trim() == 'eula=true' } }
+        if (acceptedEula == null) {
+            throw new GradleException('Accept the Minecraft EULA in a development server first; no acceptance was found')
+        }
+        if (new File(testDirectory, 'world').exists()) {
+            throw new GradleException('Use a new teamcraft_test_run ID; tests never reuse or delete a world')
+        }
+        testDirectory.mkdirs()
+        new File(testDirectory, 'eula.txt').bytes = acceptedEula.bytes
+        new File(testDirectory, 'server.properties').text = '''server-ip=127.0.0.1
+server-port=0
+online-mode=false
+enforce-secure-profile=false
+view-distance=2
+simulation-distance=2
+spawn-protection=0
+level-seed=1
+max-players=8
+sync-chunk-writes=false
+'''
+    }
+    doLast {
+        def result = new File(testDirectory, 'test-result.txt')
+        if (!result.isFile() || !result.text.startsWith('PASS\n')) {
+            throw new GradleException("Multiplayer integration tests failed; inspect ${testDirectory}")
+        }
+    }
+}

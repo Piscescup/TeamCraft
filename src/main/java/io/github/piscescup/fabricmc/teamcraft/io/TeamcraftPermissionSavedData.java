@@ -76,7 +76,11 @@ public class TeamcraftPermissionSavedData
                 Permission.CODEC.fieldOf(HELP_KEY)
                     .forGetter(data -> data.permissions.getPermission(HELP_KEY)),
                 Permission.CODEC.optionalFieldOf(PERMISSION_KEY, Permission.LEVEL_GAMEMASTERS)
-                    .forGetter(data -> data.permissions.getPermission(PERMISSION_KEY))
+                    .forGetter(data -> data.permissions.getPermission(PERMISSION_KEY)),
+                Permission.CODEC.optionalFieldOf(INVITE_KEY, Permission.LEVEL_ALL)
+                    .forGetter(data -> data.permissions.getPermission(INVITE_KEY)),
+                Permission.CODEC.optionalFieldOf(LEAVE_TEAM_KEY, Permission.LEVEL_ALL)
+                    .forGetter(data -> data.permissions.getPermission(LEAVE_TEAM_KEY))
             )
                 .apply(instance, TeamcraftPermissionSavedData::new)
     );
@@ -121,7 +125,9 @@ public class TeamcraftPermissionSavedData
         Permission resetPermission,
         Permission statusPermission,
         Permission helpPermission,
-        Permission permissionPermission
+        Permission permissionPermission,
+        Permission invitePermission,
+        Permission leaveTeamPermission
     )
     {
         this.permissions = TeamCommandPermission.Builder.create()
@@ -135,6 +141,8 @@ public class TeamcraftPermissionSavedData
             .status(statusPermission)
             .help(helpPermission)
             .permission(permissionPermission)
+            .invite(invitePermission)
+            .leaveTeam(leaveTeamPermission)
             .build();
     }
 

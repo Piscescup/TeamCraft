@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "teamcraft_multiplayer_tests",
+  "version": "1.0.0",
+  "name": "TeamCraft isolated multiplayer integration tests",
+  "environment": "server",
+  "entrypoints": {
+    "main": ["io.github.piscescup.fabricmc.teamcraft.testing.MultiplayerChecks"]
+  },
+  "depends": {"teamcraft": "*", "fabric-api": "*"}
+}
