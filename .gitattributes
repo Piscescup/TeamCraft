@@ -1,2 +1,3 @@
 /src/** text eol=crlf
 /src/**/*.png -text
+/gradlew text eol=lf

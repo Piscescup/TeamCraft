@@ -108,6 +108,9 @@ jobs:
             echo "version-type=release" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Build every supported Minecraft version
         env:
           MOD_VERSION: ${{ steps.release.outputs.version }}
